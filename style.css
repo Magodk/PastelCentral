@@ -1,0 +1,1118 @@
+/* Configurações Globais */
+:root {
+    --cor-principal: #8B4513; /* Marrom Café Escuro */
+    --cor-secundaria: #FFD700; /* Amarelo Ouro */
+    --cor-destaque: #FF8C00; /* Laranja Escuro */
+    --cor-sucesso: #28a745; /* Verde para sucesso */
+    --cor-perigo: #dc3545; /* Vermelho para perigo */
+    --cor-info: #007bff; /* Azul para informação/personalização */
+    --cor-texto: #333;
+    --cor-fundo: #f8f8f8; /* Fundo mais claro */
+    --cor-branco: #fff;
+    --cor-cinza-claro: #e9ecef;
+    --cor-borda: #dee2e6;
+    --sombra-leve: 0 2px 5px rgba(0,0,0,0.08);
+    --sombra-media: 0 5px 15px rgba(0,0,0,0.12);
+    --sombra-pesada: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    line-height: 1.6;
+    padding-bottom: 80px; 
+    overflow-x: hidden;
+}
+
+/* CLASSE DE CORREÇÃO DE BUG: BLOQUEIA SCROLL QUANDO O MODAL DE LOGIN ESTÁ ATIVO */
+.no-scroll {
+    overflow: hidden !important; 
+}
+
+/* --- Modal de Entrada (Splash Screen) --- */
+.modal-entrada {
+    position: fixed;
+    z-index: 9999; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(var(--cor-principal), 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+}
+
+.modal-entrada.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.modal-entrada-conteudo {
+    /* AJUSTE VISUAL: Máx. 400px de largura */
+    width: 95%;
+    max-width: 400px; 
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--sombra-pesada);
+    background-color: var(--cor-branco);
+    text-align: center;
+    animation: fadeInScale 0.4s ease-out;
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9); }
+    to { transform: scale(1); }
+}
+
+.modal-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 20px;
+}
+
+.modal-entrada-conteudo h2 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin-bottom: 10px;
+    font-size: 1.8em;
+}
+
+.modal-entrada-conteudo p {
+    color: var(--cor-texto);
+    margin-bottom: 25px;
+    font-size: 0.95em;
+}
+
+/* Estilos de inputs nos Formulários de Autenticação */
+.auth-form {
+    padding-top: 10px;
+    position: relative; 
+}
+
+.auth-form h4 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-destaque);
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    text-align: center;
+}
+
+.auth-form .form-group {
+    text-align: left;
+    margin-bottom: 18px;
+}
+
+.auth-form label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+    color: var(--cor-texto);
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form input:focus {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
+    outline: none;
+}
+/* FIM Estilos de Modal de Login/Cadastro */
+
+/* Estilo do Botão Primário (Usado em todos os envios de formulário) */
+.btn-primary {
+    width: 100%;
+    padding: 14px 20px;
+    background-color: var(--cor-sucesso);
+    color: var(--cor-branco);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s ease-in-out;
+    margin-top: 20px;
+    box-shadow: var(--sombra-leve);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn-primary:disabled {
+    background-color: var(--cor-cinza-claro);
+    color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+
+/* Separador "Ou" (Mantido o estilo, mas escondido no HTML) */
+.separator-auth {
+    text-align: center;
+    margin: 20px 0 0;
+    font-weight: 600;
+    color: #999;
+    position: relative;
+}
+
+.separator-auth::before,
+.separator-auth::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--cor-borda);
+}
+
+.separator-auth::before {
+    left: 0;
+}
+
+.separator-auth::after {
+    right: 0;
+}
+/* --- FIM Modal de Entrada --- */
+
+/* Cabeçalho (Mantido) */
+header {
+    background-color: var(--cor-principal);
+    color: var(--cor-branco);
+    padding: 15px 20px;
+    text-align: center;
+    box-shadow: var(--sombra-media);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    max-width: 960px;
+    width: 100%;
+}
+
+.header-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-right: 15px;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+}
+
+.header-text {
+    text-align: left;
+}
+
+header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.2em;
+    margin-bottom: 2px;
+}
+
+header p {
+    font-size: 0.9em;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+/* --- Botões de Alternância de Abas do Cardápio (Mantido) --- */
+.tab-buttons {
+    display: flex;
+    width: 100%;
+    background-color: var(--cor-branco);
+    box-shadow: var(--sombra-leve);
+    border-bottom: 1px solid var(--cor-borda);
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+
+.tab-buttons button {
+    flex-grow: 1;
+    padding: 15px 10px;
+    background-color: var(--cor-cinza-claro);
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1em;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.tab-buttons button:hover:not(.active) {
+    background-color: #e2e6ea;
+    color: var(--cor-texto);
+}
+
+.tab-buttons button.active {
+    background-color: var(--cor-branco);
+    border-bottom-color: var(--cor-destaque);
+    color: var(--cor-destaque);
+    box-shadow: inset 0 -3px 0 var(--cor-destaque);
+}
+
+
+/* Cardápio e Itens (Mantido) */
+.menu-container {
+    padding: 20px;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* Título da Categoria */
+.categoria-section {
+    margin-bottom: 30px; 
+}
+
+.categoria-titulo {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin: 30px 0 20px 0;
+    border-bottom: 2px solid var(--cor-secundaria);
+    display: block;
+    padding-bottom: 10px;
+    font-size: 1.8em;
+    font-weight: 700;
+    text-align: center;
+}
+
+.item-card {
+    background-color: var(--cor-branco);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--sombra-leve);
+    border-left: 6px solid var(--cor-secundaria);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sombra-media);
+}
+
+/* Destaca itens Personalizáveis */
+.item-card.personalizavel-item {
+    border-left-color: var(--cor-info);
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.15);
+}
+
+
+.item-card h3 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin-bottom: 8px;
+    font-size: 1.4em;
+    line-height: 1.3;
+}
+
+.item-card .descricao {
+    font-size: 0.95em;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.item-card .preco {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--cor-destaque);
+    margin-bottom: 15px;
+}
+
+/* Controle de Quantidade */
+.quantidade-controle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    margin-left: auto;
+}
+
+/* Estilo para botão ADICIONAR PERSONALIZADO */
+.quantidade-controle .adicionar-personalizado {
+    background-color: var(--cor-sucesso);
+    color: var(--cor-branco);
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: var(--sombra-leve);
+}
+.quantidade-controle .adicionar-personalizado:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+.quantidade-controle .adicionar-personalizado:active {
+    transform: translateY(0);
+}
+
+/* Estilo para botões padrões */
+.quantidade-controle button:not(.adicionar-personalizado) {
+    background-color: var(--cor-principal);
+    color: var(--cor-branco);
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-shrink: 0;
+    box-shadow: var(--sombra-leve);
+}
+.quantidade-controle button:not(.adicionar-personalizado):hover:not(:disabled) {
+    background-color: #6b370d;
+    transform: translateY(-1px);
+}
+.quantidade-controle button:not(.adicionar-personalizado):active {
+    transform: translateY(0);
+}
+.quantidade-controle button:disabled {
+    background-color: var(--cor-cinza-claro);
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+
+.quantidade {
+    font-size: 1.3em;
+    font-weight: 700;
+    min-width: 25px;
+    text-align: center;
+    color: var(--cor-texto);
+}
+
+/* Detalhe de sabores no modal do carrinho */
+.sabores-detalhe {
+    font-size: 0.8em;
+    color: #555;
+    margin-top: 8px;
+    padding-left: 15px;
+    border-top: 1px dashed var(--cor-borda);
+    padding-top: 8px;
+    line-height: 1.4;
+}
+
+
+/* ================================================= */
+/* SEÇÃO DE GERENCIAMENTO (Mantido) */
+/* ================================================= */
+
+.gerenciamento-container {
+    padding: 20px;
+    background-color: var(--cor-fundo);
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.gerenciamento-container h2 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin-bottom: 30px;
+    text-align: center;
+    border-bottom: 2px solid var(--cor-destaque);
+    padding-bottom: 10px;
+    font-size: 2em;
+    font-weight: 700;
+}
+
+/* Formulário Adicionar Produto e Gerenciamento de Sabores */
+.gerenciamento-form,
+#gerenciamento-sabores-container {
+    background-color: var(--cor-branco);
+    padding: 25px;
+    border-radius: 12px; 
+    box-shadow: var(--sombra-media); 
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px; 
+    border: 1px solid var(--cor-borda);
+}
+
+.gerenciamento-form h3,
+.gerenciamento-section .lista-titulo {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-destaque);
+    margin-bottom: 20px; 
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--cor-fundo); 
+    font-size: 1.6em;
+    text-align: center;
+    font-weight: 600;
+}
+.gerenciamento-form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical; 
+    min-height: 80px;
+}
+
+.gerenciamento-form textarea:focus {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
+    outline: none;
+}
+
+
+/* Estilos de input/select */
+.gerenciamento-form .form-group label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+    color: var(--cor-texto);
+}
+
+.gerenciamento-form input[type="text"],
+.gerenciamento-form input[type="number"],
+.gerenciamento-form select,
+.sabor-form input[type="text"] { 
+    width: 100%;
+    padding: 12px 15px; 
+    border: 1px solid var(--cor-borda); 
+    border-radius: 8px; 
+    font-size: 1em;
+    transition: border-color 0.3s, box-shadow 0.2s;
+    background-color: var(--cor-branco);
+    appearance: none; 
+}
+
+.gerenciamento-form input:focus,
+.gerenciamento-form select:focus,
+.sabor-form input:focus {
+    border-color: var(--cor-destaque); 
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
+    outline: none;
+}
+
+/* Estilo para Checkbox Personalizável */
+.combo-check-group {
+    display: flex;
+    align-items: center;
+    background-color: #e6f0ff; 
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--cor-info);
+    box-shadow: var(--sombra-leve);
+}
+
+.combo-check-group input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+    cursor: pointer;
+    accent-color: var(--cor-info); 
+}
+
+.combo-check-group .checkbox-label {
+    margin: 0;
+    font-weight: 600;
+    color: var(--cor-info);
+    cursor: pointer;
+    font-size: 1.05em;
+}
+
+
+/* Seções de gerenciamento individuais */
+.gerenciamento-section {
+    background-color: var(--cor-branco);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: var(--sombra-media);
+    margin-bottom: 30px;
+    border: 1px solid var(--cor-borda);
+}
+
+#lista-produtos-gerenciar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+}
+
+.item-gerenciar {
+    background-color: var(--cor-cinza-claro);
+    padding: 15px 20px; 
+    border-radius: 8px; 
+    box-shadow: var(--sombra-leve);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 6px solid var(--cor-destaque); 
+    transition: background-color 0.2s;
+}
+.item-gerenciar:hover {
+    background-color: #e2e6ea;
+}
+
+
+.item-gerenciar span {
+    font-weight: 400; 
+    color: var(--cor-texto);
+    font-size: 1.05em; 
+    flex-grow: 1;
+    padding-right: 15px;
+    line-height: 1.4;
+}
+
+.item-gerenciar-remover-btn {
+    background-color: var(--cor-perigo); 
+    color: var(--cor-branco);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background-color 0.2s, transform 0.1s;
+    font-weight: 600;
+    white-space: nowrap; 
+}
+
+.item-gerenciar-remover-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+.item-gerenciar-remover-btn:active {
+    transform: translateY(0);
+}
+
+.aviso-gerenciamento {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 25px 15px;
+    background-color: var(--cor-cinza-claro);
+    border-radius: 8px;
+    border: 1px dashed var(--cor-borda);
+}
+
+
+/* ================================================= */
+/* ESTILOS PARA GERENCIAMENTO DE SABORES */
+/* ================================================= */
+
+.sabor-form {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    margin-bottom: 25px;
+    border-bottom: 1px dashed var(--cor-borda);
+    padding-bottom: 20px;
+}
+
+.sabor-form .form-group {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+.sabor-form .btn-primary {
+    margin-top: 0;
+    padding: 10px 18px;
+    background-color: var(--cor-info); 
+}
+
+.sabor-form .btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.sabores-lista-titulo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4em;
+    color: var(--cor-principal);
+    margin-bottom: 15px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Reutiliza o estilo do grid de sabores do modal */
+#lista-sabores-atuais {
+    border: 1px solid var(--cor-borda);
+    padding: 15px;
+    background-color: var(--cor-cinza-claro);
+    border-radius: 8px;
+}
+
+.sabor-item {
+    background-color: var(--cor-branco);
+    border-color: var(--cor-info);
+    color: var(--cor-info);
+    padding: 10px 15px;
+    font-size: 0.9em;
+    position: relative;
+    padding-right: 40px;
+    border-radius: 25px; 
+    box-shadow: var(--sombra-leve);
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: default; 
+}
+
+.sabor-item .remover-sabor-btn {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background-color: var(--cor-perigo);
+    color: var(--cor-branco);
+    border: none;
+    border-radius: 50%;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+    box-shadow: var(--sombra-leve);
+}
+
+.sabor-item .remover-sabor-btn:hover {
+    background-color: #c82333;
+}
+
+/* --- NOVO MODAL: Seleção de Sabores (Mantido) --- */
+.modal-info-text {
+    font-size: 1em;
+    color: var(--cor-principal);
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.sabores-opcoes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+    max-height: 250px; 
+    overflow-y: auto; 
+    padding: 15px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-cinza-claro);
+}
+
+.sabor-item {
+    background-color: var(--cor-branco);
+    color: var(--cor-texto);
+    padding: 12px 18px;
+    border-radius: 25px; 
+    border: 1px solid #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.95em;
+    text-align: center;
+    user-select: none; 
+    box-shadow: var(--sombra-leve);
+}
+
+.sabor-item:hover:not(.selected) {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+}
+
+.sabor-item.selected {
+    background-color: var(--cor-info); 
+    color: var(--cor-branco);
+    border-color: var(--cor-info);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.contador-text {
+    text-align: center;
+    font-weight: 600;
+    color: var(--cor-texto);
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+/* --- FIM NOVO MODAL --- */
+
+
+/* Carrinho Flutuante (Bottom Bar) */
+#carrinho-flutuante {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--cor-principal);
+    padding: 12px 15px;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+#ver-carrinho-btn {
+    width: 100%;
+    padding: 16px 20px;
+    background-color: var(--cor-secundaria);
+    color: var(--cor-principal);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.15em;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: var(--sombra-leve);
+}
+
+#ver-carrinho-btn:hover {
+    background-color: #e3b000;
+    transform: translateY(-2px);
+}
+#ver-carrinho-btn.has-items {
+    background-color: var(--cor-sucesso);
+    color: var(--cor-branco);
+}
+#ver-carrinho-btn.has-items:hover {
+    background-color: #218838;
+}
+
+/* Modal do Carrinho (Padrão) */
+.modal {
+    display: none; 
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-conteudo {
+    background-color: var(--cor-branco);
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid var(--cor-borda);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: var(--sombra-pesada);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.fechar-modal {
+    color: #aaa;
+    float: right;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.fechar-modal:hover,
+.fechar-modal:focus {
+    color: var(--cor-perigo);
+    text-decoration: none;
+}
+
+.modal-conteudo h3 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--cor-borda);
+    padding-bottom: 10px;
+    font-size: 1.8em;
+    font-weight: 700;
+}
+
+#lista-carrinho {
+    list-style: none;
+    margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px; 
+}
+
+#lista-carrinho li {
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--cor-borda);
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.05em;
+}
+#lista-carrinho li:last-child {
+    border-bottom: none;
+}
+
+#lista-carrinho li span:first-child {
+    flex-basis: 65%; 
+}
+#lista-carrinho li span:last-child {
+    flex-basis: 30%; 
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+
+.item-remover {
+    background-color: var(--cor-perigo);
+    border: none;
+    color: var(--cor-branco);
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.2s;
+    font-weight: 600;
+}
+
+.item-remover:hover {
+    background-color: #c82333;
+}
+
+.carrinho-vazio {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 30px 0 !important;
+    border-bottom: none !important;
+}
+
+.total {
+    font-size: 1.5em;
+    font-weight: 700;
+    text-align: right;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed var(--cor-secundaria);
+    color: var(--cor-principal);
+}
+
+/* NOVO: Estilos para o formulário de finalização */
+#form-finalizar-pedido {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--cor-borda);
+}
+
+#form-finalizar-pedido h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.2em;
+    color: var(--cor-principal);
+    margin-top: 15px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed var(--cor-cinza-claro);
+    padding-bottom: 5px;
+}
+
+.form-group-inline {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group-inline .form-group {
+    flex: 1;
+}
+
+/* Estilos para input/select dentro do modal */
+#form-finalizar-pedido input[type="text"],
+#form-finalizar-pedido input[type="number"],
+#form-finalizar-pedido select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+#form-finalizar-pedido input:focus,
+#form-finalizar-pedido select:focus {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
+    outline: none;
+}
+
+/* Estilo para o aviso de troco */
+.aviso-troco {
+    font-size: 0.9em;
+    color: var(--cor-info);
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.aviso-whatsapp-rodape {
+    text-align: center;
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 15px;
+}
+
+#finalizar-pedido-btn-form {
+    margin-top: 20px;
+}
+
+
+/* Rodapé */
+footer {
+    background-color: var(--cor-principal);
+    color: #e9ecef;
+    text-align: center;
+    padding: 15px;
+    font-size: 0.85em;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .form-group-inline {
+        flex-direction: column;
+        gap: 0;
+    }
+    .form-group-inline .form-group {
+        flex: none;
+    }
+    header h1 {
+        font-size: 1.8em;
+    }
+    header p {
+        font-size: 0.8em;
+    }
+    .header-logo {
+        width: 50px;
+        height: 50px;
+    }
+    .categoria-titulo {
+        font-size: 1.6em;
+    }
+    .item-card h3 {
+        font-size: 1.2em;
+    }
+    .quantidade-controle button,
+    .quantidade-controle .adicionar-personalizado {
+        width: 35px;
+        height: 35px;
+        font-size: 1.3em;
+    }
+    .quantidade {
+        font-size: 1.1em;
+    }
+    .modal-entrada-conteudo, .modal-conteudo {
+        margin: 10% auto;
+        width: 95%;
+        padding: 20px;
+    }
+    #lista-carrinho li span:first-child {
+        flex-basis: 100%;
+        margin-bottom: 5px;
+    }
+    #lista-carrinho li span:last-child {
+        flex-basis: 100%;
+        justify-content: space-between;
+    }
+    .sabores-opcoes-grid {
+        max-height: 200px;
+    }
+}
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.6em;
+    }
+    header p {
+        font-size: 0.75em;
+    }
+    .header-logo {
+        width: 45px;
+        height: 45px;
+    }
+    .categoria-titulo {
+        font-size: 1.4em;
+    }
+    .item-card h3 {
+        font-size: 1.1em;
+    }
+    .item-card .descricao {
+        font-size: 0.85em;
+    }
+    .item-card .preco {
+        font-size: 1em;
+    }
+    .quantidade-controle {
+        gap: 8px;
+    }
+    .quantidade-controle button,
+    .quantidade-controle .adicionar-personalizado {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2em;
+    }
+    .quantidade {
+        font-size: 1em;
+    }
+    .btn-primary, .tab-buttons button, #ver-carrinho-btn {
+        font-size: 1em;
+        padding: 12px 15px;
+    }
+    .modal-entrada-conteudo, .modal-conteudo {
+        margin: 5% auto;
+    }
+}

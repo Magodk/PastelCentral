@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pastel Central - Pedidos Mobile</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    </head>
+<body>
+
+    <div id="modal-entrada" class="modal-entrada">
+        <div class="modal-entrada-conteudo">
+            <img src="logo.png" alt="Logo Pastel Central" class="modal-logo">
+            <h2>Bem-vindo(a)!</h2>
+            <p id="auth-info-text">Acesse para começar seu pedido ou entre como Administrador.</p>
+            
+            <div id="auth-forms-container">
+
+                <form id="form-acesso-rapido" class="auth-form">
+                    <h4>Acesso Rápido (Cliente)</h4>
+
+                    <div class="form-group">
+                        <label for="acesso-rapido-nome">Seu Nome:</label>
+                        <input type="text" id="acesso-rapido-nome" placeholder="Nome Completo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="acesso-rapido-whatsapp">WhatsApp:</label>
+                        <input 
+                            type="tel" 
+                            id="acesso-rapido-whatsapp" 
+                            maxlength="15" 
+                            placeholder="(81) 91234-5678" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="acesso-rapido-email">Email (Opcional):</label>
+                        <input type="email" id="acesso-rapido-email" placeholder="seu-email@dominio.com">
+                    </div>
+
+                    <button type="submit" class="btn-primary">Entrar e Pedir</button>
+                </form>
+                
+                <div class="separator-auth" style="display: none;">Ou</div>
+
+                <form id="form-login-admin" class="auth-form" style="display: none;">
+                    <h4>Acesso Restrito</h4>
+                    
+                    <div class="form-group">
+                        <label for="admin-email">Email (Acesso Admin):</label>
+                        <input type="email" id="admin-email" value="admin@pastelcentral.com" placeholder="admin@pastelcentral.com" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Tela-cliente">Senha Admin:</label>
+                        <input type="password" id="Tela-cliente" placeholder="Senha" autocomplete="current-password" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Entrar como Administrador</button>
+                </form>
+
+            </div>
+            </div>
+    </div>
+    
+    <header>
+        <div class="header-content">
+            <img src="logo.png" alt="Logo Pastel Central" class="header-logo">
+            <div class="header-text">
+                <h1>Pastel Central</h1>
+                <p>O sabor que você ama, na sua mão!</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="tab-buttons">
+        <button id="tab-cardapio" class="active">Cardápio</button>
+        <button id="tab-gerenciamento" style="display: none;">Gerenciar Produtos</button>
+    </div>
+
+    <main class="menu-container">
+        
+        <section id="categoria-pastel" class="categoria-section">
+            <h2 class="categoria-titulo">Pastéis Salgados</h2>
+        </section>
+
+        <section id="categoria-coxinha" class="categoria-section">
+            <h2 class="categoria-titulo">Coxinhas</h2>
+        </section>
+
+        <section id="categoria-doces" class="categoria-section">
+            <h2 class="categoria-titulo">Pastéis Doces e Sobremesas</h2>
+        </section>
+        
+        <section id="categoria-bebidas" class="categoria-section">
+            <h2 class="categoria-titulo">Bebidas Geladas</h2>
+        </section>
+
+    </main>
+
+    <section id="gerenciamento" class="gerenciamento-container" style="display: none;">
+        <h2>Área de Gerenciamento</h2>
+        
+        <form id="adicionar-produto-form" class="gerenciamento-form">
+            <h3>Adicionar Novo Produto</h3>
+            
+            <div class="form-group">
+                <label for="categoria-produto">Categoria:</label>
+                <select id="categoria-produto" required>
+                    <option value="" disabled selected>Selecione a Categoria</option>
+                    <option value="pastel">Pastel Salgado</option>
+                    <option value="coxinha">Coxinha</option>
+                    <option value="doces">Doce/Sobremesa</option>
+                    <option value="bebidas">Bebida</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="nome-produto">Nome do Produto:</label>
+                <input type="text" id="nome-produto" required>
+            </div>
+            
+            <div class="form-group combo-check-group">
+                <input type="checkbox" id="is-personalizavel">
+                <label for="is-personalizavel" class="checkbox-label">Este item requer seleção de sabores?</label>
+            </div>
+
+            <div class="form-group" id="max-sabores-group" style="display: none;">
+                <label for="max-sabores">Máximo de Sabores a Escolher:</label>
+                <input type="number" id="max-sabores" value="5" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="descricao-produto">Descrição:</label>
+                <textarea id="descricao-produto" rows="2" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="preco-produto">Preço (R$):</label>
+                <input type="number" id="preco-produto" step="0.01" min="0" required>
+            </div>
+            <button type="submit" id="btn-adicionar" class="btn-primary">Adicionar ao Cardápio</button>
+        </form>
+
+        <div class="gerenciamento-section">
+            <h3 class="lista-titulo">Remover Produtos Existentes</h3>
+            <div id="lista-produtos-gerenciar">
+                <p class="aviso-gerenciamento">Carregando produtos...</p>
+            </div>
+        </div>
+        
+        <div class="gerenciamento-section">
+            <h3 class="lista-titulo">Gerenciar Opções de Sabores</h3>
+            <div id="gerenciamento-sabores-container">
+                <form id="adicionar-sabor-form" class="sabor-form">
+                    <div class="form-group">
+                        <label for="novo-sabor-input">Adicionar Novo Sabor:</label>
+                        <input type="text" id="novo-sabor-input" placeholder="Ex: Camarão com Catupiry" required>
+                    </div>
+                    <button type="submit" id="btn-adicionar-sabor" class="btn-primary">Adicionar Sabor</button>
+                </form>
+
+                <h4 class="sabores-lista-titulo">Sabores Atuais:</h4>
+                <div id="lista-sabores-atuais" class="sabores-opcoes-grid">
+                    <p class="aviso-gerenciamento">Carregando sabores...</p>
+                </div>
+            </div>
+        </div>
+        
+    </section>
+
+    <div id="carrinho-flutuante">
+        <button id="ver-carrinho-btn">
+            Ver Carrinho (<span id="total-itens">0</span> itens)
+        </button>
+    </div>
+
+    <div id="modal-carrinho" class="modal">
+        <div class="modal-conteudo">
+            <span class="fechar-modal">&times;</span>
+            <h3>Seu Pedido</h3>
+            <ul id="lista-carrinho">
+                <li class="carrinho-vazio">Seu carrinho está vazio.</li>
+            </ul>
+            <p class="total">Total: <span id="valor-total">R$ 0,00</span></p>
+
+            <form id="form-finalizar-pedido">
+                <h4>Detalhes da Entrega</h4>
+                
+                <div class="form-group">
+                    <label for="input-rua">Rua/Avenida:</label>
+                    <input type="text" id="input-rua" required>
+                </div>
+                <div class="form-group-inline">
+                    <div class="form-group">
+                        <label for="input-numero">Nº:</label>
+                        <input type="text" id="input-numero" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-referencia">Referência/Apto:</label>
+                        <input type="text" id="input-referencia" placeholder="Ex: Ao lado do mercado">
+                    </div>
+                </div>
+
+                <h4>Forma de Pagamento</h4>
+                <div class="form-group">
+                    <select id="select-pagamento" required>
+                        <option value="" disabled selected>Selecione a forma de pagamento</option>
+                        <option value="pix">PIX</option>
+                        <option value="cartao">Cartão de Crédito/Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                    </select>
+                </div>
+
+                <div id="troco-group" class="form-group" style="display: none;">
+                    <label for="input-valor-pago">Valor para Troco (R$):</label>
+                    <input type="number" id="input-valor-pago" step="0.01" min="0" placeholder="Ex: 50.00">
+                    <p class="aviso-troco" id="aviso-troco">Informe o valor que será entregue para calcular o troco.</p>
+                </div>
+                
+                <button type="submit" id="finalizar-pedido-btn-form" class="btn-primary" disabled>Enviar Pedido via WhatsApp</button>
+            </form>
+
+            <p class="aviso-whatsapp-rodape">Atenção: A loja confirmará a taxa de entrega e o tempo de envio.</p>
+        </div>
+    </div>
+    
+    <div id="modal-sabores" class="modal" style="z-index: 1002;">
+        <div class="modal-conteudo">
+            <span class="fechar-modal fechar-sabores">&times;</span>
+            <h3 id="sabores-modal-titulo">Escolha seus Sabores</h3>
+            <p id="sabores-modal-info" class="modal-info-text"></p>
+
+            <div id="sabores-opcoes" class="sabores-opcoes-grid">
+            </div>
+            
+            <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
+            
+            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2025 Pastel Central. Todos os direitos reservados.
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
