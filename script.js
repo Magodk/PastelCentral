@@ -73,13 +73,11 @@ const phoneMask = (value) => {
 }
 
 async function carregarCardapioDaAPI() {
-    // Limpa os itens existentes
     document.querySelectorAll('.categoria-section').forEach(section => {
         const itens = section.querySelectorAll('.item-card');
         itens.forEach(item => item.remove());
     });
 
-    // Dados Iniciais (Simulação de API)
     const produtosIniciais = [
          { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!", },
          { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido.", },
@@ -101,10 +99,10 @@ async function carregarCardapioDaAPI() {
                 produto.categoria, 
                 isPersonalizavel, 
                 maxSabores, 
-                produto.id // ID não está sendo usado neste exemplo local
+                produto.id 
             );
             categoriaSection.appendChild(novoItemCard);
-            atualizarQuantidadeDisplay(produto.nome); // Garante que a quantidade mostrada é 0
+            atualizarQuantidadeDisplay(produto.nome); 
         }
     });
 }
@@ -126,14 +124,12 @@ function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, 
 
     let botoesHTML = '';
     if (isPersonalizavel) {
-        // Botão de adicionar personalizado abre o modal de sabores
         botoesHTML = `
             <button class="remover" data-item="${nome}" disabled>-</button>
             <span class="quantidade" id="qty-${nome}">0</span>
             <button class="adicionar-personalizado" data-item="${nome}">+</button>
         `;
     } else {
-         // Botões de adicionar/remover padrão
          botoesHTML = `
             <button class="remover" data-item="${nome}">-</button>
             <span class="quantidade" id="qty-${nome}">0</span>
@@ -174,7 +170,6 @@ async function adicionarProdutoAoCardapio(event) {
         return;
     }
     
-    // Verifica se o nome já existe
     const nomeExistente = Array.from(document.querySelectorAll('.item-card')).some(item => 
         item.dataset.nome.toLowerCase() === nome.toLowerCase()
     );
@@ -202,7 +197,6 @@ async function removerProdutoDoCardapio(itemNome) {
 
     itemCard.remove();
     
-    // Remove do carrinho se existir
     if (carrinho[itemNome]) {
         delete carrinho[itemNome];
         atualizarTotalItensBotao();
@@ -210,7 +204,7 @@ async function removerProdutoDoCardapio(itemNome) {
     }
 
     alert(`Produto "${itemNome}" removido (temporariamente).`);
-    renderizarListaGerenciamento(); // Atualiza a lista de gerenciamento
+    renderizarListaGerenciamento();
 }
 
 function renderizarListaGerenciamento() {
@@ -252,12 +246,11 @@ function adicionarSabor(event) {
     let novoSabor = input.value.trim();
 
     if (novoSabor) {
-        // Formata o sabor (primeira letra maiúscula)
         novoSabor = novoSabor.charAt(0).toUpperCase() + novoSabor.slice(1).toLowerCase();
 
         if (!listaSaboresDisponiveis.includes(novoSabor)) {
             listaSaboresDisponiveis.push(novoSabor);
-            listaSaboresDisponiveis.sort(); // Mantém em ordem alfabética
+            listaSaboresDisponiveis.sort(); 
             renderizarListaSaboresGerenciamento();
             input.value = '';
             alert(`Sabor "${novoSabor}" adicionado temporariamente.`);
@@ -308,7 +301,6 @@ function atualizarQuantidadeDisplay(itemNome) {
         
         const btnRemover = document.querySelector(`.quantidade-controle button[data-item="${itemNome}"].remover`);
         if (btnRemover) {
-            // Desabilita o botão de remover se a quantidade for 0
             btnRemover.disabled = quantidadeAtual === 0;
         }
     }
@@ -327,10 +319,8 @@ function gerenciarCarrinho(itemNome, acao, itemPersonalizado = null) {
 
     if (isPersonalizavel) {
         if (acao === 'adicionar' && itemPersonalizado) {
-            // Adiciona a entrada do item personalizado
             carrinho[itemNome].push({ preco: itemPreco, sabores: itemPersonalizado.sabores });
         } else if (acao === 'remover' && carrinho[itemNome].length > 0) {
-            // Remove a última entrada (útil para personalizáveis)
             carrinho[itemNome].pop();
         }
     } else { 
@@ -362,7 +352,6 @@ function removerItemDoCarrinho(itemNome) {
 function calcularTotal() {
     let total = 0;
     for (const itemNome in carrinho) {
-        // Soma o preço de cada instância do item
         total += carrinho[itemNome].reduce((sum, item) => sum + item.preco, 0);
     }
     return total;
@@ -370,18 +359,13 @@ function calcularTotal() {
 
 function atualizarTotalItensBotao() {
     let totalItens = Object.values(carrinho).reduce((sum, current) => sum + current.length, 0);
-    const totalValor = calcularTotal().toFixed(2).replace('.', ',');
-    
     document.getElementById('total-itens').textContent = totalItens;
-    document.getElementById('valor-total-carrinho-botao').textContent = `R$ ${totalValor}`;
 
-    // Habilita/Desabilita o botão de finalizar pedido no modal
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
-    if (finalizarPedidoBtnForm) {
-        finalizarPedidoBtnForm.disabled = totalItens === 0;
+    if (finalizarPedidoBtnForm) { 
+        finalizarPedidoBtnForm.disabled = totalItens === 0; 
     }
     
-    // Adiciona/Remove a classe de "pulse" no botão do carrinho
     const verCarrinhoBtn = document.getElementById('ver-carrinho-btn');
     if (totalItens > 0) {
         verCarrinhoBtn.classList.add('has-items');
@@ -402,17 +386,17 @@ function renderizarCarrinhoModal() {
         listaCarrinho.innerHTML = '<li class="carrinho-vazio">Seu carrinho está vazio.</li>';
     } else {
         const nomesItensOrdenados = Object.keys(carrinho).sort();
+
         nomesItensOrdenados.forEach(itemNome => {
             const itensDoTipo = carrinho[itemNome];
             const quantidade = itensDoTipo.length;
             const itemPrecoUnitario = itensDoTipo[0].preco;
             const subtotal = quantidade * itemPrecoUnitario;
-
+            
             let descricaoSabores = '';
             const isPersonalizavel = itensDoTipo[0].sabores !== undefined && itensDoTipo[0].sabores.length > 0;
-            
+
             if (isPersonalizavel) {
-                // Monta a lista de sabores para cada unidade personalizada
                 descricaoSabores = itensDoTipo.map((item, index) => {
                     return `*#${index + 1}:* ${item.sabores.join(', ')}`;
                 }).join(' <br> ');
@@ -421,8 +405,8 @@ function renderizarCarrinhoModal() {
             const li = document.createElement('li');
             li.innerHTML = `
                 <span>${quantidade}x ${itemNome}</span>
-                <span> 
-                    R$ ${subtotal.toFixed(2).replace('.', ',')} 
+                <span>
+                    R$ ${subtotal.toFixed(2).replace('.', ',')}
                     <button class="item-remover" data-item="${itemNome}">Remover</button>
                 </span>
                 ${isPersonalizavel ? `<p class="sabores-detalhe">${descricaoSabores}</p>` : ''}
@@ -433,7 +417,6 @@ function renderizarCarrinhoModal() {
 
     valorTotalSpan.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
     
-    // Recalcula o troco se a opção for dinheiro
     const selectPagamento = document.getElementById('select-pagamento');
     const inputValorPago = document.getElementById('input-valor-pago');
     if (selectPagamento && inputValorPago && selectPagamento.value === 'dinheiro') {
@@ -445,15 +428,16 @@ function calcularTrocoSimulado() {
     const total = calcularTotal();
     const valorPagoInput = document.getElementById('input-valor-pago');
     const avisoTroco = document.getElementById('aviso-troco');
+    
     const valorPago = parseFloat(valorPagoInput.value) || 0;
-
+    
     if (valorPago > total) {
         const troco = valorPago - total;
         avisoTroco.textContent = `Troco estimado: R$ ${troco.toFixed(2).replace('.', ',')}`;
         avisoTroco.style.color = 'var(--cor-sucesso)';
     } else if (valorPago === total && total > 0) {
-        avisoTroco.textContent = 'Pagamento exato. Sem necessidade de troco.';
-        avisoTroco.style.color = 'var(--cor-sucesso)';
+         avisoTroco.textContent = 'Pagamento exato. Sem necessidade de troco.';
+         avisoTroco.style.color = 'var(--cor-sucesso)';
     } else {
         avisoTroco.textContent = 'Informe o valor que será entregue para calcular o troco.';
         avisoTroco.style.color = 'var(--cor-info)';
@@ -471,7 +455,6 @@ function validarFormularioPedido() {
         alert("Por favor, preencha a Rua e o Número para entrega.");
         return false;
     }
-
     if (!pagamento) {
         alert("Por favor, selecione a forma de pagamento.");
         return false;
@@ -481,8 +464,7 @@ function validarFormularioPedido() {
         alert("O valor fornecido para troco deve ser igual ou superior ao Total do Pedido.");
         return false;
     }
-
-    // Se tudo estiver OK, armazena os detalhes da transação
+    
     detalhesTransacao.rua = rua;
     detalhesTransacao.numero = numero;
     detalhesTransacao.referencia = document.getElementById('input-referencia').value.trim();
@@ -492,375 +474,370 @@ function validarFormularioPedido() {
     return true;
 }
 
-function gerarMensagemWhatsApp() {
-    // 1. DADOS DO CLIENTE
-    let mensagem = `*PEDIDO NOVO - PASTEL CENTRAL*\n\n`;
-    mensagem += `*Cliente:* ${dadosCliente.nome}\n`;
-    mensagem += `*WhatsApp:* ${dadosCliente.whatsapp}\n`;
-    if (dadosCliente.email) {
-        mensagem += `*Email:* ${dadosCliente.email}\n`;
-    }
-    mensagem += `\n------------------------\n`;
-
-    // 2. ITENS DO PEDIDO
-    mensagem += `*ITENS:*\n`;
-    let totalItens = 0;
+function enviarPedidoWhatsApp(event) {
+    event.preventDefault(); 
     
+    if (Object.keys(carrinho).length === 0) {
+        alert("Seu carrinho está vazio!");
+        return;
+    }
+    if (!validarFormularioPedido()) {
+        return; 
+    }
+
+    const total = calcularTotal();
+    const { rua, numero, referencia, pagamento, trocoPara } = detalhesTransacao;
+    
+    let mensagem = `*--- 📝 NOVO PEDIDO - PASTEL CENTRAL ---*\n\n`;
+    mensagem += `*CLIENTE:* ${dadosCliente.nome}\n`;
+    mensagem += `*CONTATO:* ${dadosCliente.whatsapp}\n`;
+    // Email foi removido do acesso cliente, mas mantido para Admin (se logado como Admin)
+    if (dadosCliente.email && dadosCliente.email !== '') {
+        mensagem += `*EMAIL:* ${dadosCliente.email}\n`;
+    } else {
+        // Para clientes normais, o email não será incluído.
+        mensagem += `*EMAIL:* Não Informado\n`;
+    }
+    mensagem += `*TOTAL DO PEDIDO:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
+    
+    mensagem += `*DETALHES DA ENTREGA:*\n`;
+    mensagem += `  - *Endereço:* ${rua}, Nº ${numero}\n`;
+    mensagem += `  - *Referência:* ${referencia || 'Nenhuma'}\n\n`;
+    
+    mensagem += `*PAGAMENTO:*\n`;
+    mensagem += `  - *Forma:* ${pagamento.toUpperCase()}\n`;
+    
+    if (pagamento === 'dinheiro') {
+        const troco = trocoPara - total;
+        mensagem += `  - *Valor Entregue:* R$ ${trocoPara.toFixed(2).replace('.', ',')}\n`;
+        mensagem += `  - *Troco Necessário:* R$ ${troco.toFixed(2).replace('.', ',')}\n`;
+    } else if (pagamento === 'cartao') {
+        mensagem += `  - Levar Máquina de Cartão.\n`;
+    }
+    
+    mensagem += `\n*ITENS SOLICITADOS:*\n`;
+
     const nomesItensOrdenados = Object.keys(carrinho).sort();
 
     nomesItensOrdenados.forEach(itemNome => {
         const itensDoTipo = carrinho[itemNome];
-        const quantidadeTotal = itensDoTipo.length;
-        const subtotal = (quantidadeTotal * itensDoTipo[0].preco).toFixed(2).replace('.', ',');
-        totalItens += quantidadeTotal;
-
-        mensagem += `- *${quantidadeTotal}x* ${itemNome} (R$ ${subtotal})\n`;
+        const quantidade = itensDoTipo.length;
+        // const itemPrecoUnitario = itensDoTipo[0].preco; // Não usado no corpo do pedido por linha
         
-        // Adiciona detalhes de sabores
-        if (itensDoTipo[0].sabores && itensDoTipo[0].sabores.length > 0) {
-            itensDoTipo.forEach((item, index) => {
-                mensagem += `  -> #Item ${index + 1}: ${item.sabores.join(', ')}\n`;
+        mensagem += `  > *${quantidade}x ${itemNome}* \n`;
+
+        const isPersonalizavel = itensDoTipo[0].sabores !== undefined && itensDoTipo[0].sabores.length > 0;
+        if (isPersonalizavel) {
+             itensDoTipo.forEach((item, index) => {
+                mensagem += `    - Sabores #${index + 1}: ${item.sabores.join(', ')}\n`;
             });
         }
     });
-    
-    mensagem += `\n*TOTAL DE ITENS:* ${totalItens}\n`;
-    mensagem += `*TOTAL DO PEDIDO:* R$ ${calcularTotal().toFixed(2).replace('.', ',')}\n`;
-    mensagem += `\n------------------------\n`;
 
-    // 3. DETALHES DA ENTREGA E PAGAMENTO
-    mensagem += `*ENTREGA:* \n`;
-    mensagem += `Rua/Av: ${detalhesTransacao.rua}, Nº ${detalhesTransacao.numero}\n`;
-    if (detalhesTransacao.referencia) {
-        mensagem += `Referência: ${detalhesTransacao.referencia}\n`;
-    }
-    
-    mensagem += `\n*PAGAMENTO:*\n`;
-    mensagem += `Forma: ${detalhesTransacao.pagamento.toUpperCase()}\n`;
-    
-    if (detalhesTransacao.pagamento === 'dinheiro') {
-        const troco = (detalhesTransacao.trocoPara - calcularTotal()).toFixed(2).replace('.', ',');
-        mensagem += `Valor para Troco: R$ ${detalhesTransacao.trocoPara.toFixed(2).replace('.', ',')}\n`;
-        mensagem += `Troco a ser dado: R$ ${troco}\n`;
-    }
+    mensagem += `\n*--- Aguardando Confirmação da Loja ---*`;
 
-    return encodeURIComponent(mensagem);
-}
+    const numeroWhatsappLoja = '558199893952'; 
+    const linkWhatsapp = `https://wa.me/${numeroWhatsappLoja}?text=${encodeURIComponent(mensagem)}`;
 
-function enviarPedidoWhatsApp(event) {
-    event.preventDefault();
-    
-    if (Object.keys(carrinho).length === 0) {
-        alert('Seu carrinho está vazio. Adicione itens antes de finalizar.');
-        return;
-    }
+    window.open(linkWhatsapp, '_blank');
 
-    if (validarFormularioPedido()) {
-        const mensagem = gerarMensagemWhatsApp();
-        const numeroWhatsapp = '5581912345678'; // Substitua pelo número real da loja
-        const url = `https://api.whatsapp.com/send?phone=${numeroWhatsapp}&text=${mensagem}`;
-        
-        window.open(url, '_blank');
-        
-        // Opcional: Limpar o carrinho e fechar o modal após o envio
-        carrinho = {};
+    carrinho = {};
+    document.getElementById('modal-carrinho').style.display = 'none';
+    carregarCardapioDaAPI().then(() => { 
         atualizarTotalItensBotao();
-        document.getElementById('modal-carrinho').classList.remove('visible');
-        
-        // Reseta os campos do form de checkout para a próxima vez
-        document.getElementById('form-finalizar-pedido').reset();
-        document.getElementById('troco-group').style.display = 'none';
-        document.getElementById('aviso-troco').textContent = 'Informe o valor que será entregue para calcular o troco.';
-        document.getElementById('aviso-troco').style.color = 'var(--cor-info)';
-        
-        alert('Seu pedido foi enviado para o WhatsApp! Aguarde a confirmação da loja.');
-    }
+    });
 }
 
-// ------------------------------------------------------------------
-// LÓGICA DO MODAL DE SABORES
-// ------------------------------------------------------------------
 
-function abrirModalSabores(itemNome, maxSabores) {
+// Lógica de Sabores (Mantida)
+function openSaboresModal(itemNome, maxSabores) {
     const modal = document.getElementById('modal-sabores');
     const titulo = document.getElementById('sabores-modal-titulo');
     const info = document.getElementById('sabores-modal-info');
+    const contador = document.getElementById('sabores-contador');
+    const btnConfirmar = document.getElementById('confirmar-sabores-btn');
+    const opcoesContainer = document.getElementById('sabores-opcoes');
     
     itemPersonalizavelAtual = itemNome;
-    maxSaboresPermitidos = parseInt(maxSabores);
+    maxSaboresPermitidos = parseInt(maxSabores, 10);
     saboresSelecionados = [];
 
-    titulo.textContent = `Escolha seus Sabores para ${itemNome}`;
-    info.textContent = `Selecione no máximo ${maxSaboresPermitidos} sabores.`;
-    
-    renderizarOpcoesSabores();
-    atualizarContadorSabores();
-
-    modal.classList.add('visible');
-    document.body.classList.add('no-scroll');
-}
-
-function renderizarOpcoesSabores() {
-    const opcoesContainer = document.getElementById('sabores-opcoes');
     opcoesContainer.innerHTML = '';
-
-    listaSaboresDisponiveis.forEach(sabor => {
+    listaSaboresDisponiveis.sort().forEach(sabor => {
         const div = document.createElement('div');
-        div.classList.add('sabor-opcao');
-        div.textContent = sabor;
+        div.classList.add('sabor-item');
         div.dataset.sabor = sabor;
-
-        div.addEventListener('click', () => toggleSabor(sabor, div));
+        div.textContent = sabor;
         opcoesContainer.appendChild(div);
     });
+    
+    titulo.textContent = `Escolha seus Sabores para "${itemNome}"`;
+    info.textContent = `Selecione exatamente ${maxSabores} sabores.`;
+    contador.textContent = `Sabores escolhidos: 0 de ${maxSabores}`;
+    btnConfirmar.disabled = true;
+    
+    document.querySelectorAll('#sabores-opcoes .sabor-item').forEach(s => s.classList.remove('selected'));
+
+    modal.style.display = 'block';
 }
 
-function toggleSabor(sabor, elemento) {
+function handleSaborClick(event) {
+    const saborElement = event.target.closest('.sabor-item');
+    if (!saborElement) return;
+
+    const sabor = saborElement.dataset.sabor;
+    if (!sabor) return;
+
     const index = saboresSelecionados.indexOf(sabor);
     
     if (index > -1) {
-        // Desselecionar
         saboresSelecionados.splice(index, 1);
-        elemento.classList.remove('selecionado');
+        saborElement.classList.remove('selected');
+    } else if (saboresSelecionados.length < maxSaboresPermitidos) {
+        saboresSelecionados.push(sabor);
+        saborElement.classList.add('selected');
     } else {
-        // Selecionar (se não exceder o limite)
-        if (saboresSelecionados.length < maxSaboresPermitidos) {
-            saboresSelecionados.push(sabor);
-            elemento.classList.add('selecionado');
-        } else {
-            alert(`Você já selecionou o máximo de ${maxSaboresPermitidos} sabores permitidos.`);
-        }
+        alert(`Você já escolheu o máximo de ${maxSaboresPermitidos} sabores. Desmarque um para escolher outro.`);
     }
-    
-    atualizarContadorSabores();
+
+    document.getElementById('sabores-contador').textContent = 
+        `Sabores escolhidos: ${saboresSelecionados.length} de ${maxSaboresPermitidos}`;
+        
+    const btnConfirmar = document.getElementById('confirmar-sabores-btn');
+    btnConfirmar.disabled = saboresSelecionados.length !== maxSaboresPermitidos;
 }
 
-function atualizarContadorSabores() {
-    const contador = document.getElementById('sabores-contador');
-    const btnAdicionar = document.getElementById('adicionar-sabores-carrinho');
-    const numSelecionados = saboresSelecionados.length;
-    
-    contador.textContent = `Sabores escolhidos: ${numSelecionados} de ${maxSaboresPermitidos}`;
-    
-    // O botão só é habilitado se pelo menos 1 sabor for escolhido
-    if (numSelecionados > 0) {
-        btnAdicionar.disabled = false;
-        contador.style.color = 'var(--cor-sucesso)';
-    } else {
-        btnAdicionar.disabled = true;
-        contador.style.color = 'var(--cor-destaque)';
+function confirmarSabores() {
+    if (saboresSelecionados.length !== maxSaboresPermitidos) {
+        alert(`Por favor, selecione exatamente ${maxSaboresPermitidos} sabores.`);
+        return;
     }
+    
+    const itemElement = document.querySelector(`[data-nome="${itemPersonalizavelAtual}"]`);
+    const itemPreco = parseFloat(itemElement.dataset.preco);
+    
+    const itemPersonalizado = {
+        preco: itemPreco, 
+        sabores: [...saboresSelecionados] 
+    };
+    
+    gerenciarCarrinho(itemPersonalizavelAtual, 'adicionar', itemPersonalizado);
+    
+    document.getElementById('modal-sabores').style.display = 'none';
 }
 
-function adicionarPersonalizadoAoCarrinho() {
-    const modal = document.getElementById('modal-sabores');
-    
-    if (saboresSelecionados.length > 0) {
-        // Cria um novo item personalizado com os sabores escolhidos
-        const itemPersonalizado = {
-            sabores: [...saboresSelecionados] // Clonar para evitar referência
-        };
+
+// Lógica de Alternância de Abas
+function alternarAbas(abaAtivaId) {
+    const cardapio = document.querySelector('.menu-container');
+    const gerenciamento = document.getElementById('gerenciamento');
+    const btnCardapio = document.getElementById('tab-cardapio');
+    const btnGerenciamento = document.getElementById('tab-gerenciamento');
+
+    if (abaAtivaId === 'cardapio') {
+        cardapio.style.display = 'block';
+        gerenciamento.style.display = 'none';
+        btnCardapio.classList.add('active');
+        btnGerenciamento.classList.remove('active');
+    } else if (abaAtivaId === 'gerenciamento') {
+        renderizarListaGerenciamento(); 
+        renderizarListaSaboresGerenciamento(); 
         
-        gerenciarCarrinho(itemPersonalizavelAtual, 'adicionar', itemPersonalizado);
-        
-        // Fecha o modal e limpa o estado
-        itemPersonalizavelAtual = null;
-        maxSaboresPermitidos = 0;
-        saboresSelecionados = [];
-        modal.classList.remove('visible');
-        document.body.classList.remove('no-scroll');
-    } else {
-        alert('Por favor, selecione pelo menos um sabor.');
+        cardapio.style.display = 'none';
+        gerenciamento.style.display = 'block';
+        btnCardapio.classList.remove('active');
+        btnGerenciamento.classList.add('active');
     }
 }
 
 
 // ------------------------------------------------------------------
-// INICIALIZAÇÃO E LISTENERS DE EVENTOS
+// EVENT LISTENERS (Ouvintes de Eventos) - CORRIGIDO
 // ------------------------------------------------------------------
 
-function alternarAbas(aba) {
-    const tabCardapioBtn = document.getElementById('tab-cardapio');
-    const tabGerenciamentoBtn = document.getElementById('tab-gerenciamento');
-    const cardapioContainer = document.querySelector('.menu-container');
-    const gerenciamentoContainer = document.getElementById('gerenciamento');
-    const footerCarrinho = document.getElementById('footer-carrinho');
+document.addEventListener('DOMContentLoaded', () => {
     
-    if (aba === 'cardapio') {
-        tabCardapioBtn.classList.add('active');
-        tabGerenciamentoBtn.classList.remove('active');
-        cardapioContainer.style.display = 'block';
-        gerenciamentoContainer.style.display = 'none';
-        footerCarrinho.style.display = 'block';
-    } else if (aba === 'gerenciamento' && acessoGerenciamentoLiberado) {
-        tabCardapioBtn.classList.remove('active');
-        tabGerenciamentoBtn.classList.add('active');
-        cardapioContainer.style.display = 'none';
-        gerenciamentoContainer.style.display = 'block';
-        footerCarrinho.style.display = 'none';
-        
-        renderizarListaGerenciamento();
-        renderizarListaSaboresGerenciamento();
-    }
-}
+    const modalEntrada = document.getElementById('modal-entrada');
+    
+    // Formulários
+    const formLoginCliente = document.getElementById('form-login-cliente'); // ID ALTERADO
+    const formLoginAdmin = document.getElementById('form-login-admin'); 
 
-function inicializarApp() {
-    // Carrega o cardápio inicial
-    carregarCardapioDaAPI();
+    // Inputs de Cliente (Sem o campo de email)
+    const inputAcessoRapidoNome = document.getElementById('acesso-rapido-nome');
+    const inputAcessoRapidoWhatsapp = document.getElementById('acesso-rapido-whatsapp');
     
-    // Adiciona a máscara ao campo de WhatsApp
-    const whatsappInput = document.getElementById('acesso-rapido-whatsapp');
-    whatsappInput.addEventListener('input', (e) => {
+    // Inputs de Admin
+    const inputAdminEmail = document.getElementById('admin-email');
+    const inputTelaCliente = document.getElementById('Tela-cliente');
+    
+    // Elementos de Controle
+    const btnGerenciamento = document.getElementById('tab-gerenciamento'); 
+    const btnCardapio = document.getElementById('tab-cardapio'); 
+    const separatorAuth = document.querySelector('.separator-auth');
+
+
+    // Demais Elementos de Modais
+    const modal = document.getElementById('modal-carrinho');
+    const modalSabores = document.getElementById('modal-sabores');
+    const btnVerCarrinho = document.getElementById('ver-carrinho-btn');
+    const spanFechar = document.querySelector('#modal-carrinho .fechar-modal');
+    const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
+    const selectPagamento = document.getElementById('select-pagamento');
+    const trocoGroup = document.getElementById('troco-group');
+    const inputValorPago = document.getElementById('input-valor-pago');
+    const closeSabores = document.querySelector('.fechar-sabores');
+    const saboresOpcoes = document.getElementById('sabores-opcoes');
+    const btnConfirmarSabores = document.getElementById('confirmar-sabores-btn');
+    const formAdicionarProduto = document.getElementById('adicionar-produto-form');
+    const formAdicionarSabor = document.getElementById('adicionar-sabor-form');
+
+
+    // Inicializa bloqueando o scroll
+    document.body.classList.add('no-scroll'); 
+
+    // --- 1. Lógica de Input e Detecção do Admin ---
+    inputAcessoRapidoWhatsapp.addEventListener('input', (e) => {
         e.target.value = phoneMask(e.target.value);
     });
-
-    // === Listeners do Modal de Entrada (Login) ===
-    document.getElementById('form-acesso-rapido').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Armazena os dados do cliente
-        dadosCliente.nome = document.getElementById('acesso-rapido-nome').value.trim();
-        dadosCliente.whatsapp = document.getElementById('acesso-rapido-whatsapp').value.trim();
-        dadosCliente.email = document.getElementById('acesso-rapido-email').value.trim();
-        
-        // Injeta os dados no modal do carrinho (checkout)
-        document.getElementById('info-cliente-nome').textContent = dadosCliente.nome;
-        document.getElementById('info-cliente-whatsapp').textContent = dadosCliente.whatsapp;
-
-        finalizarAutenticacao();
-        
-        // Exibe o botão de gerenciamento APENAS no cabeçalho, mas sem acesso ainda
-        document.getElementById('tab-gerenciamento').style.display = 'block';
-    });
     
-    document.getElementById('form-login-admin').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('admin-email').value.trim();
-        const senha = document.getElementById('Tela-cliente').value.trim();
-        
-        if (verificarLoginAdminLocal(email, senha)) {
-            acessoGerenciamentoLiberado = true;
-            
-            // Simula o login do cliente para preencher os dados do pedido
-            dadosCliente.nome = NOME_ADMIN;
-            dadosCliente.whatsapp = '(99) 99999-9999';
-            dadosCliente.email = EMAIL_ADMIN;
-            
-            // Injeta os dados no modal do carrinho (checkout)
-            document.getElementById('info-cliente-nome').textContent = dadosCliente.nome + ' (ADMIN)';
-            document.getElementById('info-cliente-whatsapp').textContent = dadosCliente.whatsapp;
 
-            finalizarAutenticacao();
+    inputAcessoRapidoNome.addEventListener('input', (e) => {
+        const nomeDigitado = e.target.value.trim().toLowerCase();
+        
+        if (nomeDigitado === NOME_ADMIN) {
+            // MODO ADMIN: Esconde cliente e mostra admin
+            formLoginCliente.style.display = 'none'; // ID ALTERADO
+            if (separatorAuth) separatorAuth.style.display = 'none';
+            formLoginAdmin.style.display = 'block';
             
-            // Oculta o botão de Voltar para Cliente
-            document.getElementById('toggle-acesso-rapido').style.display = 'none';
-        } else {
-            alert('Acesso negado. Verifique Email e Senha Admin.');
+
+            inputAdminEmail.value = EMAIL_ADMIN; 
+            inputTelaCliente.focus();
+
+        } else if (formLoginAdmin.style.display === 'block') {
+            // Volta para o modo cliente se o nome for apagado
+            formLoginAdmin.style.display = 'none';
+            formLoginCliente.style.display = 'block'; // ID ALTERADO
+            if (separatorAuth) separatorAuth.style.display = 'none';
         }
     });
+
+    // --- 2. SUBMISSÃO DO FORMULÁRIO (ACESSO/CADASTRO CLIENTE) ---
+    formLoginCliente.addEventListener('submit', async (e) => { // ID ALTERADO
+        e.preventDefault();
+        
+        const numeroLimpo = inputAcessoRapidoWhatsapp.value.replace(/\D/g, '');
+        const nomeCliente = inputAcessoRapidoNome.value.trim();
+        
+        if (numeroLimpo.length !== 11) {
+            alert('Por favor, insira um WhatsApp válido (DDD + 9 dígitos).');
+            return;
+        }
+
+        // Coleta de Dados do Cliente (Apenas Nome e WhatsApp)
+        dadosCliente.nome = nomeCliente;
+        dadosCliente.whatsapp = inputAcessoRapidoWhatsapp.value;
+        dadosCliente.email = ''; // Limpa o email para clientes que não são admin
+
+        finalizarAutenticacao();
+    });
     
-    // Alternância do Login (Admin/Cliente)
-    const formAcessoRapido = document.getElementById('form-acesso-rapido');
-    const formLoginAdmin = document.getElementById('form-login-admin');
-    const toggleAdminBtn = document.getElementById('toggle-admin-login');
-    const toggleClienteBtn = document.getElementById('toggle-acesso-rapido');
-    const separatorAuth = document.querySelector('.separator-auth');
-    
-    // Mostra o botão de alternância para o Admin (pois inicialmente está no Acesso Rápido)
-    toggleAdminBtn.style.display = 'block'; 
-    
-    toggleAdminBtn.addEventListener('click', () => {
-        formAcessoRapido.style.display = 'none';
-        formLoginAdmin.style.display = 'block';
-        toggleAdminBtn.style.display = 'none';
-        toggleClienteBtn.style.display = 'block';
-        separatorAuth.style.display = 'none';
+    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN) ---
+    formLoginAdmin.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = inputAdminEmail.value;
+        const cliente = inputTelaCliente.value;
+        
+        const sucessoLogin = verificarLoginAdminLocal(email, cliente); // Usa verificação local
+
+        if (sucessoLogin) {
+            acessoGerenciamentoLiberado = true;
+            
+            // Ativa o botão de Gerenciamento
+            btnGerenciamento.style.display = 'block'; 
+            btnCardapio.style.flexGrow = 0.5;
+            btnGerenciamento.style.flexGrow = 0.5;
+            
+            dadosCliente.nome = "ADMINISTRADOR (Zeze)";
+            dadosCliente.whatsapp = "N/A - Gerenciamento";
+            dadosCliente.email = email;
+            alert(`Bem-vindo(a), Administrador! Acesso de gerenciamento liberado.`);
+            
+            finalizarAutenticacao();
+        } else {
+             alert('Erro de login Admin. Email ou Senha incorretos.');
+        } 
     });
 
-    toggleClienteBtn.addEventListener('click', () => {
-        formAcessoRapido.style.display = 'block';
-        formLoginAdmin.style.display = 'none';
-        toggleAdminBtn.style.display = 'block';
-        toggleClienteBtn.style.display = 'none';
-        separatorAuth.style.display = 'none';
-    });
 
-    // === Listeners do Cardápio (Adicionar/Remover Item) ===
+    // --- 4. Demais Listeners (Carrinho, Sabores, Gerenciamento) ---
+    
     document.querySelector('.menu-container').addEventListener('click', (e) => {
         const target = e.target;
         const itemNome = target.dataset.item;
-        
-        if (!itemNome) return;
 
-        if (target.classList.contains('adicionar')) {
-            gerenciarCarrinho(itemNome, 'adicionar');
-        } else if (target.classList.contains('remover')) {
-            gerenciarCarrinho(itemNome, 'remover');
-        } else if (target.classList.contains('adicionar-personalizado')) {
-            const itemCard = target.closest('.item-card');
-            const maxSabores = itemCard.dataset.maxSabores;
-            abrirModalSabores(itemNome, maxSabores);
+        if (itemNome) {
+            if (target.classList.contains('adicionar-personalizado')) {
+                const itemElement = document.querySelector(`.item-card[data-nome="${itemNome}"]`);
+                const maxSabores = itemElement ? itemElement.dataset.maxSabores : 5;
+                openSaboresModal(itemNome, maxSabores);
+            } 
+            else if (target.classList.contains('adicionar')) {
+                gerenciarCarrinho(itemNome, 'adicionar');
+            } 
+            else if (target.classList.contains('remover')) {
+                gerenciarCarrinho(itemNome, 'remover');
+            }
         }
     });
-    
-    // === Listeners do Carrinho/Checkout ===
-    document.getElementById('ver-carrinho-btn').addEventListener('click', () => {
-        document.getElementById('modal-carrinho').classList.add('visible');
-        document.body.classList.add('no-scroll');
-        renderizarCarrinhoModal();
-    });
-    
-    document.querySelector('.fechar-carrinho').addEventListener('click', () => {
-        document.getElementById('modal-carrinho').classList.remove('visible');
-        document.body.classList.remove('no-scroll');
-    });
+
+    // Lógica do Modal do Carrinho
+    btnVerCarrinho.onclick = function() { renderizarCarrinhoModal(); modal.style.display = 'block'; }
+    spanFechar.onclick = function() { modal.style.display = 'none'; }
+    window.onclick = function(event) { 
+        if (event.target == modal && modalSabores.style.display === 'none') { 
+            modal.style.display = 'none'; 
+        } 
+    }
     
     document.getElementById('lista-carrinho').addEventListener('click', (e) => {
         const target = e.target;
         if (target.classList.contains('item-remover')) {
             const itemNome = target.dataset.item;
-            if (confirm(`Tem certeza que deseja remover todos os itens do tipo "${itemNome}" do carrinho?`)) {
-                removerItemDoCarrinho(itemNome);
-            }
+            removerItemDoCarrinho(itemNome);
         }
     });
 
-    // Lógica para mostrar/ocultar o campo de troco
-    document.getElementById('select-pagamento').addEventListener('change', (e) => {
-        const trocoGroup = document.getElementById('troco-group');
+    // Lógica de Pagamento e Troco
+    selectPagamento.addEventListener('change', (e) => {
         if (e.target.value === 'dinheiro') {
             trocoGroup.style.display = 'block';
-            calcularTrocoSimulado();
+            inputValorPago.setAttribute('required', 'required');
+            calcularTrocoSimulado(); 
         } else {
             trocoGroup.style.display = 'none';
+            inputValorPago.removeAttribute('required');
         }
     });
-    
-    // Lógica para calcular troco
-    document.getElementById('input-valor-pago').addEventListener('input', calcularTrocoSimulado);
 
-    // Finalizar pedido (Enviar para WhatsApp)
-    document.getElementById('form-finalizar-pedido').addEventListener('submit', enviarPedidoWhatsApp);
-    
-    // === Listeners do Modal de Sabores ===
-    document.querySelector('.fechar-sabores').addEventListener('click', () => {
-        document.getElementById('modal-sabores').classList.remove('visible');
-        document.body.classList.remove('no-scroll');
-    });
-    
-    document.getElementById('adicionar-sabores-carrinho').addEventListener('click', adicionarPersonalizadoAoCarrinho);
+    inputValorPago.addEventListener('input', calcularTrocoSimulado);
+    finalizarPedidoBtnForm.addEventListener('click', enviarPedidoWhatsApp);
 
-    // === Listeners da Área de Gerenciamento ===
-    const formAdicionarProduto = document.getElementById('adicionar-produto-form');
+
+    // Lógica do Modal de Seleção de Sabores
+    closeSabores.onclick = () => { modalSabores.style.display = 'none'; };
+    saboresOpcoes.addEventListener('click', handleSaborClick);
+    btnConfirmarSabores.addEventListener('click', confirmarSabores);
+
+    // Gerenciamento
     formAdicionarProduto.addEventListener('submit', adicionarProdutoAoCardapio);
     
-    // Lógica para mostrar o campo de máx. sabores ao marcar o checkbox
     document.getElementById('is-personalizavel').addEventListener('change', (e) => {
-        const maxSaboresGroup = document.getElementById('max-sabores-group');
-        maxSaboresGroup.style.display = e.target.checked ? 'block' : 'none';
+        document.getElementById('max-sabores-group').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    // Listener para remover produto do cardápio (dentro da aba de gerenciamento)
     document.getElementById('lista-produtos-gerenciar').addEventListener('click', (e) => {
         const target = e.target;
         if (target.classList.contains('item-gerenciar-remover-btn')) {
@@ -872,7 +849,6 @@ function inicializarApp() {
     });
     
     // Gerenciamento de Sabores
-    const formAdicionarSabor = document.getElementById('form-adicionar-sabor');
     formAdicionarSabor.addEventListener('submit', adicionarSabor);
 
     document.getElementById('lista-sabores-atuais').addEventListener('click', (e) => {
@@ -888,17 +864,16 @@ function inicializarApp() {
     // Ouvinte para os botões de Aba
     document.getElementById('tab-cardapio').addEventListener('click', () => alternarAbas('cardapio'));
     
-    const btnGerenciamento = document.getElementById('tab-gerenciamento');
     btnGerenciamento.addEventListener('click', () => {
         if (acessoGerenciamentoLiberado) {
             alternarAbas('gerenciamento');
         } else {
-            alert('Acesso negado! A aba de Gerenciamento é restrita ao Administrador.');
-            // Volta para a aba de cardápio caso clique por engano
-            alternarAbas('cardapio'); 
+            alert('Acesso negado! A aba de Gerenciamento é restrita ao administrador.');
         }
     });
-}
 
-// Inicia a aplicação
-document.addEventListener('DOMContentLoaded', inicializarApp);
+    // Inicialização
+    carregarCardapioDaAPI().then(() => {
+        atualizarTotalItensBotao();
+    });
+});

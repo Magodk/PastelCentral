@@ -19,8 +19,8 @@
             
             <div id="auth-forms-container">
 
-                <form id="form-acesso-rapido" class="auth-form">
-                    <h4>Acesso Rápido (Cliente)</h4>
+                <form id="form-login-cliente" class="auth-form">
+                    <h4>Acesso / Cadastro Cliente</h4>
 
                     <div class="form-group">
                         <label for="acesso-rapido-nome">Seu Nome:</label>
@@ -38,12 +38,7 @@
                         >
                     </div>
 
-                    <div class="form-group">
-                        <label for="acesso-rapido-email">Email (Opcional):</label>
-                        <input type="email" id="acesso-rapido-email" placeholder="seu-email@dominio.com">
-                    </div>
-
-                    <button type="submit" class="btn-primary">Entrar e Pedir</button>
+                    <button type="submit" class="btn-primary">Acessar e Pedir</button>
                 </form>
                 
                 <div class="separator-auth" style="display: none;">Ou</div>
@@ -64,12 +59,7 @@
                 </form>
 
             </div>
-            
-            <button id="toggle-admin-login" class="btn-secondary" style="margin-top: 15px; width: 100%; display: none;">Entrar como Administrador</button>
-            
-            <button id="toggle-acesso-rapido" class="btn-link" style="margin-top: 15px; width: 100%; display: none;">Voltar para Acesso Rápido</button>
-            
-        </div>
+            </div>
     </div>
     
     <header>
@@ -91,19 +81,19 @@
         
         <section id="categoria-pastel" class="categoria-section">
             <h2 class="categoria-titulo">Pastéis Salgados</h2>
-            </section>
+        </section>
 
         <section id="categoria-coxinha" class="categoria-section">
             <h2 class="categoria-titulo">Coxinhas</h2>
-            </section>
+        </section>
 
         <section id="categoria-doces" class="categoria-section">
             <h2 class="categoria-titulo">Pastéis Doces e Sobremesas</h2>
-            </section>
+        </section>
         
         <section id="categoria-bebidas" class="categoria-section">
             <h2 class="categoria-titulo">Bebidas Geladas</h2>
-            </section>
+        </section>
 
     </main>
 
@@ -112,7 +102,7 @@
         
         <form id="adicionar-produto-form" class="gerenciamento-form">
             <h3>Adicionar Novo Produto</h3>
-
+            
             <div class="form-group">
                 <label for="categoria-produto">Categoria:</label>
                 <select id="categoria-produto" required>
@@ -128,7 +118,7 @@
                 <label for="nome-produto">Nome do Produto:</label>
                 <input type="text" id="nome-produto" required>
             </div>
-
+            
             <div class="form-group combo-check-group">
                 <input type="checkbox" id="is-personalizavel">
                 <label for="is-personalizavel" class="checkbox-label">Este item requer seleção de sabores?</label>
@@ -140,39 +130,36 @@
             </div>
 
             <div class="form-group">
-                <label for="descricao-produto">Descrição Curta:</label>
-                <textarea id="descricao-produto" required></textarea>
+                <label for="descricao-produto">Descrição:</label>
+                <textarea id="descricao-produto" rows="2" required></textarea>
             </div>
-
             <div class="form-group">
                 <label for="preco-produto">Preço (R$):</label>
-                <input type="number" id="preco-produto" step="0.01" min="0.01" required>
+                <input type="number" id="preco-produto" step="0.01" min="0" required>
             </div>
-
-            <button type="submit" class="btn-primary">Salvar Produto (Localmente)</button>
+            <button type="submit" id="btn-adicionar" class="btn-primary">Adicionar ao Cardápio</button>
         </form>
 
         <div class="gerenciamento-section">
-            <h3 class="lista-titulo">Produtos no Cardápio (Remover)</h3>
+            <h3 class="lista-titulo">Remover Produtos Existentes</h3>
             <div id="lista-produtos-gerenciar">
                 <p class="aviso-gerenciamento">Carregando produtos...</p>
             </div>
         </div>
+        
+        <div class="gerenciamento-section">
+            <h3 class="lista-titulo">Gerenciar Opções de Sabores</h3>
+            <div id="gerenciamento-sabores-container">
+                <form id="adicionar-sabor-form" class="sabor-form">
+                    <div class="form-group">
+                        <label for="novo-sabor-input">Adicionar Novo Sabor:</label>
+                        <input type="text" id="novo-sabor-input" placeholder="Ex: Camarão com Catupiry" required>
+                    </div>
+                    <button type="submit" id="btn-adicionar-sabor" class="btn-primary">Adicionar Sabor</button>
+                </form>
 
-        <div id="gerenciamento-sabores-container" class="gerenciamento-form">
-            <h3>Gerenciar Opções de Sabores</h3>
-            
-            <form id="form-adicionar-sabor" class="sabor-form">
-                <div class="form-group">
-                    <label for="novo-sabor-input">Adicionar Novo Sabor:</label>
-                    <input type="text" id="novo-sabor-input" placeholder="Ex: Chocolate Trufado" required>
-                </div>
-                <button type="submit" class="btn-primary" style="margin-top: 0;">Adicionar Sabor</button>
-            </form>
-
-            <div class="gerenciamento-section" style="padding: 15px; box-shadow: none;">
-                <p style="font-weight: 600; margin-bottom: 10px; color: var(--cor-principal);">Sabores Atuais (Clique 'X' para remover):</p>
-                <div id="lista-sabores-atuais" class="lista-sabores-grid">
+                <h4 class="sabores-lista-titulo">Sabores Atuais:</h4>
+                <div id="lista-sabores-atuais" class="sabores-opcoes-grid">
                     <p class="aviso-gerenciamento">Carregando sabores...</p>
                 </div>
             </div>
@@ -180,61 +167,50 @@
         
     </section>
 
-    <div id="footer-carrinho" class="footer-carrinho">
+    <div id="carrinho-flutuante">
         <button id="ver-carrinho-btn">
-            Ver Carrinho (<span id="total-itens">0</span> Itens) - Total: <span id="valor-total-carrinho-botao">R$ 0,00</span>
+            Ver Carrinho (<span id="total-itens">0</span> itens)
         </button>
     </div>
 
-    <div id="modal-carrinho" class="modal" style="z-index: 1001;">
+    <div id="modal-carrinho" class="modal">
         <div class="modal-conteudo">
-            <span class="fechar-modal fechar-carrinho">&times;</span>
+            <span class="fechar-modal">&times;</span>
             <h3>Seu Pedido</h3>
-            
-            <ul id="lista-carrinho" class="lista-carrinho">
+            <ul id="lista-carrinho">
                 <li class="carrinho-vazio">Seu carrinho está vazio.</li>
             </ul>
+            <p class="total">Total: <span id="valor-total">R$ 0,00</span></p>
 
-            <div class="carrinho-resumo">
-                <p>Total do Pedido:</p>
-                <p id="valor-total">R$ 0,00</p>
-            </div>
-
-            <hr class="separador-carrinho">
-
-            <h4>Detalhes para Entrega</h4>
-            
             <form id="form-finalizar-pedido">
-                <p class="dados-cliente-info">
-                    Cliente: <span id="info-cliente-nome"></span> | WhatsApp: <span id="info-cliente-whatsapp"></span>
-                </p>
-
+                <h4>Detalhes da Entrega</h4>
+                
                 <div class="form-group">
                     <label for="input-rua">Rua/Avenida:</label>
-                    <input type="text" id="input-rua" placeholder="Nome da Rua" required>
+                    <input type="text" id="input-rua" required>
                 </div>
                 <div class="form-group-inline">
                     <div class="form-group">
-                        <label for="input-numero">Número:</label>
-                        <input type="text" id="input-numero" placeholder="Nº" required>
+                        <label for="input-numero">Nº:</label>
+                        <input type="text" id="input-numero" required>
                     </div>
                     <div class="form-group">
-                        <label for="input-referencia">Referência (Opcional):</label>
-                        <input type="text" id="input-referencia" placeholder="Ex: Próximo à praça">
+                        <label for="input-referencia">Referência/Apto:</label>
+                        <input type="text" id="input-referencia" placeholder="Ex: Ao lado do mercado">
                     </div>
                 </div>
 
+                <h4>Forma de Pagamento</h4>
                 <div class="form-group">
-                    <label for="select-pagamento">Forma de Pagamento:</label>
                     <select id="select-pagamento" required>
-                        <option value="" disabled selected>Selecione a Forma</option>
-                        <option value="dinheiro">Dinheiro</option>
+                        <option value="" disabled selected>Selecione a forma de pagamento</option>
                         <option value="pix">PIX</option>
                         <option value="cartao">Cartão de Crédito/Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
                     </select>
                 </div>
 
-                <div class="form-group" id="troco-group" style="display: none;">
+                <div id="troco-group" class="form-group" style="display: none;">
                     <label for="input-valor-pago">Valor para Troco (R$):</label>
                     <input type="number" id="input-valor-pago" step="0.01" min="0" placeholder="Ex: 50.00">
                     <p class="aviso-troco" id="aviso-troco">Informe o valor que será entregue para calcular o troco.</p>
@@ -254,13 +230,17 @@
             <p id="sabores-modal-info" class="modal-info-text"></p>
 
             <div id="sabores-opcoes" class="sabores-opcoes-grid">
-                </div>
+            </div>
             
             <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
             
-            <button id="adicionar-sabores-carrinho" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
         </div>
     </div>
+
+    <footer>
+        &copy; 2025 Pastel Central. Todos os direitos reservados.
+    </footer>
 
     <script src="script.js"></script>
 </body>
