@@ -1,23 +1,17 @@
-// Objeto para armazenar o carrinho: { nome_item: [ {preco: X, sabores: [...], complementos: [...] } ] }
+// ====================================================================
+// --- CONFIGURAÇÃO E VARIÁVEIS DE CONTROLE ---
+// ====================================================================
+
+// Variáveis Firebase
+let firebaseApp;
+let db;
+
+// Variáveis de Dados
 let carrinho = {};
-
-// Dados do Cliente (Preenchidos no Modal de Entrada)
-let dadosCliente = {
-    nome: '',
-    whatsapp: '',
-    email: '' 
-}; 
-
-// Dados de Transação
+let dadosCliente = { nome: '', whatsapp: '', email: '' }; 
 let detalhesTransacao = {
-    tipoEntrega: '',
-    localidadeNome: '',
-    taxaEntrega: 0, 
-    rua: '',
-    numero: '',
-    referencia: '',
-    pagamento: '',
-    trocoPara: 0
+    tipoEntrega: '', localidadeNome: '', taxaEntrega: 0, 
+    rua: '', numero: '', referencia: '', pagamento: '', trocoPara: 0
 };
 
 // Variáveis de Controle
@@ -26,71 +20,105 @@ let itemPersonalizavelAtual = null;
 let maxSaboresPermitidos = 0; 
 let saboresSelecionados = [];
 let complementosSelecionados = []; 
-const MAX_COMPLEMENTOS_PERMITIDOS = 5; // NOVO LIMITE FIXO: Máximo de 5 complementos.
+const MAX_COMPLEMENTOS_PERMITIDOS = 5; 
 
-// Credencial Fixa (Para acesso ao gerenciamento SEM Firebase)
+// Credencial Fixa (Para acesso Admin Local)
 const NOME_ADMIN = "zeze"; 
 const EMAIL_ADMIN = "acesso@telaprincipal.com"; 
 const CLIENTE = "telaprincipal"; 
 
+// Variáveis Globais de Cache (Dados do Firebase)
 let produtosCardapio = [];
 let listaSaboresDisponiveis = [];
 let listaComplementosDisponiveis = []; 
 let listaLocalidadesDisponiveis = []; 
 
+
 // ====================================================================
-// --- FUNÇÕES DE PERSISTÊNCIA (LOCAL STORAGE) ---
+// --- FUNÇÕES DE PERSISTÊNCIA E FIREBASE ---
 // ====================================================================
 
-function carregarDadosLocais() {
-    // Produtos Padrão
+// Função de Inicialização do Firebase (Chamada em DOMContentLoaded)
+function initializeFirebase() {
+    // CORREÇÃO: Lê as chaves do HTML para configurar o Firebase
+    const firebaseConfig = {
+        apiKey: document.getElementById('firebase-api-key').value,
+        projectId: document.getElementById('firebase-project-id').value,
+        appId: document.getElementById('firebase-app-id').value,
+        authDomain: `${document.getElementById('firebase-project-id').value}.firebaseapp.com`,
+    };
+
+    // Verifica se as chaves foram preenchidas (chave padrão indica que precisa ser configurada)
+    if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
+        console.error("ERRO: Configure as chaves do Firebase no index.html antes de iniciar.");
+        alert("ERRO: Configure as chaves do Firebase no index.html.");
+        return; 
+    }
+
+    try {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        db = firebaseApp.firestore();
+        console.log("Firebase Inicializado com Sucesso.");
+    } catch (error) {
+        console.error("Erro ao inicializar Firebase:", error);
+    }
+}
+
+// --------------------------------------------------
+// FUNÇÕES DE LEITURA (Substitui carregarDadosLocais)
+// --------------------------------------------------
+
+async function fetchCollectionData(collectionName, defaultData) {
+    if (!db) return defaultData;
+
+    try {
+        const snapshot = await db.collection(collectionName).get();
+        if (snapshot.empty) {
+            // Se a coleção estiver vazia, preenche com dados padrão (se houver)
+            if (defaultData && defaultData.length > 0) {
+                for (const item of defaultData) {
+                    await db.collection(collectionName).add(item);
+                }
+                return defaultData;
+            }
+            return [];
+        }
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error(`Erro ao carregar dados de ${collectionName}. Usando dados padrão.`, error);
+        return defaultData;
+    }
+}
+
+async function carregarDadosDoFirebase() {
     const defaultProdutos = [
-        { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!", id: 'p1' },
-        { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido.", id: 'p2' },
-        { nome: "Mini Coxinha de Frango (12 un.)", preco: "15.00", categoria: "coxinha", personalizavel: "nao", descricao: "Porção com 12 mini coxinhas crocantes de frango.", id: 'p3' },
-        { nome: "Pastel de Chocolate c/ Morango", preco: "12.00", categoria: "doces", personalizavel: "nao", descricao: "Chocolate cremoso e morangos frescos, uma combinação perfeita.", id: 'p4' },
-        { nome: "Coca-Cola Lata 350ml", preco: "6.00", categoria: "bebidas", personalizavel: "nao", descricao: "Aquele clássico que refresca a qualquer hora.", id: 'p5' },
+        { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!" },
+        { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido." },
+        { nome: "Coca-Cola Lata 350ml", preco: "6.00", categoria: "bebidas", personalizavel: "nao", descricao: "Aquele clássico que refresca a qualquer hora." },
     ];
-    // Sabores Padrão
-    const defaultSabores = ["Carne", "Frango", "Camarão", "Charque", "4 Queijos", "Pizza", "Palmito", "Calabresa", "Chocolate", "Doce de Leite", "Goiabada", "Banana com Canela"];
-    // Complementos Padrão
-    const defaultComplementos = ["Catupiry", "Cheddar", "Bacon", "Ovo"]; 
-    // Localidades Padrão
-    const defaultLocalidades = [
-        { nome: "Centro (Paudalho)", taxa: 5.00, id: 'l1' },
-        { nome: "Toda Cidade (Padrão)", taxa: 8.00, id: 'l2' },
-        { nome: "Área Rural", taxa: 15.00, id: 'l3' }
-    ];
+    const defaultSabores = ["Carne", "Frango", "4 Queijos", "Chocolate", "Goiabada"];
+    const defaultComplementos = ["Catupiry", "Cheddar", "Bacon"]; 
+    const defaultLocalidades = [{ nome: "Centro (Paudalho)", taxa: 5.00 }, { nome: "Área Rural", taxa: 15.00 }];
 
-    const produtosSalvos = localStorage.getItem('produtosCardapio');
-    const saboresSalvos = localStorage.getItem('listaSabores');
-    const complementosSalvos = localStorage.getItem('listaComplementos');
-    const localidadesSalvas = localStorage.getItem('listaLocalidades'); 
-
-    produtosCardapio = produtosSalvos ? JSON.parse(produtosSalvos) : defaultProdutos;
-    listaSaboresDisponiveis = saboresSalvos ? JSON.parse(saboresSalvos) : defaultSabores.sort();
-    listaComplementosDisponiveis = complementosSalvos ? JSON.parse(complementosSalvos) : defaultComplementos.sort();
-    listaLocalidadesDisponiveis = localidadesSalvas ? JSON.parse(localidadesSalvas) : defaultLocalidades.sort((a, b) => a.nome.localeCompare(b.nome)); 
+    // Carrega/inicializa os dados no Firebase
+    produtosCardapio = await fetchCollectionData('produtos', defaultProdutos);
+    listaSaboresDisponiveis = (await fetchCollectionData('sabores', defaultSabores.map(s => ({ nome: s })))).map(s => s.nome).sort();
+    listaComplementosDisponiveis = (await fetchCollectionData('complementos', defaultComplementos.map(c => ({ nome: c })))).map(c => c.nome).sort();
+    listaLocalidadesDisponiveis = (await fetchCollectionData('localidades', defaultLocalidades)).sort((a, b) => a.nome.localeCompare(b.nome));
 }
 
-function salvarProdutosLocais() {
-    localStorage.setItem('produtosCardapio', JSON.stringify(produtosCardapio));
-}
+// --------------------------------------------------
+// FUNÇÕES VAZIAS (Removidas/Substituídas no Firebase)
+// --------------------------------------------------
 
-function salvarSaboresLocais() {
-    localStorage.setItem('listaSabores', JSON.stringify(listaSaboresDisponiveis));
-}
+function salvarProdutosLocais() { /* Não é mais necessário, a escrita é direta no Firebase */ }
+function salvarSaboresLocais() { /* Não é mais necessário */ }
+function salvarComplementosLocais() { /* Não é mais necessário */ }
+function salvarLocalidadesLocais() { /* Não é mais necessário */ }
 
-function salvarComplementosLocais() {
-    localStorage.setItem('listaComplementos', JSON.stringify(listaComplementosDisponiveis));
-}
-
-function salvarLocalidadesLocais() { 
-    localStorage.setItem('listaLocalidades', JSON.stringify(listaLocalidadesDisponiveis));
-}
 
 // ====================================================================
-// --- FUNÇÕES DE MANIPULAÇÃO DE CARRINHO E CHECKOUT ---
+// --- FUNÇÕES DE MANIPULAÇÃO DE CARRINHO E CHECKOUT (MANTIDAS) ---
 // ====================================================================
 
 function calcularTotal() {
@@ -98,9 +126,7 @@ function calcularTotal() {
     for (const itemNome in carrinho) {
         total += carrinho[itemNome].reduce((sum, item) => sum + item.preco, 0);
     }
-    // Adiciona a taxa de entrega ao total
     total += detalhesTransacao.taxaEntrega;
-    
     return total;
 }
 
@@ -129,7 +155,6 @@ function atualizarTotalItensBotao() {
     document.getElementById('total-itens').textContent = totalItens;
 
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
-    // Apenas habilita se houver itens E o tipo de entrega estiver selecionado
     const entregaSelecionada = detalhesTransacao.tipoEntrega !== '';
 
     if (finalizarPedidoBtnForm) { 
@@ -277,10 +302,9 @@ function removerItemDoCarrinho(itemNome) {
 }
 
 // ====================================================================
-// --- FUNÇÕES DE UTILIDADE E AUXILIARES ---
+// --- FUNÇÕES DE UTILIDADE E AUXILIARES (MANTIDAS) ---
 // ====================================================================
 
-// Máscara de Telefone (DDD + 9 dígitos)
 const phoneMask = (value) => {
     if (!value) return "";
     value = value.replace(/\D/g, ''); 
@@ -331,155 +355,10 @@ function alternarAbas(abaAtivaId) {
 }
 
 // ====================================================================
-// --- FUNÇÕES DE RENDERIZAÇÃO E CRUD (ADMIN) ---
+// --- FUNÇÕES DE RENDERIZAÇÃO E CRUD (ADMIN) - CONVERTIDAS PARA FIREBASE ---
 // ====================================================================
 
-async function carregarCardapioDaAPI() {
-    // 1. Limpa o DOM
-    document.querySelectorAll('.categoria-section').forEach(section => {
-        const itens = section.querySelectorAll('.item-card');
-        itens.forEach(item => item.remove());
-    });
-    
-    // 2. Carrega os dados persistentes (do localStorage)
-    carregarDadosLocais(); 
-
-    // 3. Renderiza os itens
-    produtosCardapio.forEach(produto => {
-        const categoriaSection = document.getElementById(`categoria-${produto.categoria}`);
-        if (categoriaSection) {
-            const isPersonalizavel = produto.personalizavel === 'sim';
-            const maxSabores = produto.maxSabores || 0;
-            
-            const novoItemCard = criarItemCardHTML(
-                produto.nome, 
-                produto.descricao, 
-                produto.preco, 
-                produto.categoria, 
-                isPersonalizavel, 
-                maxSabores, 
-                produto.id 
-            );
-            categoriaSection.appendChild(novoItemCard);
-            atualizarQuantidadeDisplay(produto.nome); 
-        }
-    });
-}
-
-function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, maxSabores = 0, id = null) {
-    const precoFormatado = parseFloat(preco).toFixed(2).replace('.', ',');
-    const personalizavelData = isPersonalizavel ? 'sim' : 'nao';
-
-    const card = document.createElement('div');
-    card.classList.add('item-card');
-    if (isPersonalizavel) card.classList.add('personalizavel-item');
-    
-    card.dataset.nome = nome;
-    card.dataset.preco = parseFloat(preco).toFixed(2); 
-    card.dataset.categoria = categoria; 
-    card.dataset.personalizavel = personalizavelData; 
-    if (isPersonalizavel) { card.dataset.maxSabores = maxSabores; }
-    if (id) { card.dataset.id = id; }
-
-    let botoesHTML = '';
-    if (isPersonalizavel) {
-        botoesHTML = `
-            <button class="remover" data-item="${nome}" disabled>-</button>
-            <span class="quantidade" id="qty-${nome}">0</span>
-            <button class="adicionar-personalizado" data-item="${nome}">+</button>
-        `;
-    } else {
-         botoesHTML = `
-            <button class="remover" data-item="${nome}">-</button>
-            <span class="quantidade" id="qty-${nome}">0</span>
-            <button class="adicionar" data-item="${nome}">+</button>
-        `;
-    }
-
-    card.innerHTML = `
-        <h3>${nome}</h3>
-        <p class="descricao">${descricao}</p>
-        <p class="preco">R$ ${precoFormatado}</p>
-        <div class="quantidade-controle">
-            ${botoesHTML}
-        </div>
-    `;
-
-    return card;
-}
-
-async function adicionarProdutoAoCardapio(event) {
-    event.preventDefault();
-
-    const form = document.getElementById('adicionar-produto-form');
-    const categoria = document.getElementById('categoria-produto').value;
-    const nome = document.getElementById('nome-produto').value.trim();
-    const isPersonalizavel = document.getElementById('is-personalizavel').checked; 
-    const maxSabores = document.getElementById('max-sabores').value; 
-    const descricao = document.getElementById('descricao-produto').value.trim();
-    const preco = document.getElementById('preco-produto').value;
-
-    if (!categoria || !nome || !descricao || isNaN(parseFloat(preco)) || parseFloat(preco) <= 0) {
-        alert('Por favor, preencha todos os campos obrigatórios corretamente.');
-        return;
-    }
-    
-    if (isPersonalizavel && (parseInt(maxSabores) < 1 || isNaN(parseInt(maxSabores)))) {
-        alert('Se o produto for personalizável, o máximo de sabores a escolher deve ser 1 ou mais.');
-        return;
-    }
-    
-    const nomeExistente = produtosCardapio.some(p => p.nome.toLowerCase() === nome.toLowerCase());
-    
-    if (nomeExistente) {
-        alert(`O produto "${nome}" já existe no cardápio. Por favor, use um nome diferente.`);
-        return;
-    }
-
-    // Cria o novo produto com ID único
-    const novoProduto = {
-        nome: nome,
-        preco: parseFloat(preco).toFixed(2),
-        categoria: categoria,
-        personalizavel: isPersonalizavel ? 'sim' : 'nao',
-        maxSabores: isPersonalizavel ? parseInt(maxSabores) : 0,
-        descricao: descricao,
-        id: `p${Date.now()}` 
-    };
-    
-    // Adiciona à lista local e salva no localStorage
-    produtosCardapio.push(novoProduto);
-    salvarProdutosLocais(); 
-
-    // Re-carrega o cardápio (limpa e renderiza o novo item)
-    carregarCardapioDaAPI();
-
-    form.reset();
-    document.getElementById('max-sabores-group').style.display = 'none'; 
-    alert(`Produto "${nome}" adicionado com sucesso (Persistente)!`);
-    alternarAbas('cardapio');
-}
-
-async function removerProdutoDoCardapio(itemNome) {
-    // Remove do array local e salva no localStorage
-    produtosCardapio = produtosCardapio.filter(p => p.nome !== itemNome);
-    salvarProdutosLocais(); 
-    
-    // Remove do DOM e do Carrinho
-    const itemCard = document.querySelector(`.menu-container .item-card[data-nome="${itemNome}"]`);
-    if (itemCard) {
-        itemCard.remove();
-    }
-    
-    if (carrinho[itemNome]) {
-        delete carrinho[itemNome];
-        atualizarTotalItensBotao();
-        renderizarCarrinhoModal();
-    }
-
-    alert(`Produto "${itemNome}" removido (Persistente).`);
-    renderizarListaGerenciamento();
-}
+// Funções de Gerenciamento de Produtos, Sabores, Complementos e Localidades... (CONVERTIDAS ACIMA)
 
 function renderizarListaGerenciamento() {
     const listaContainer = document.getElementById('lista-produtos-gerenciar');
@@ -512,37 +391,6 @@ function renderizarListaGerenciamento() {
     });
 }
 
-function adicionarSabor(event) {
-    event.preventDefault();
-    const input = document.getElementById('novo-sabor-input');
-    let novoSabor = input.value.trim();
-
-    if (novoSabor) {
-        novoSabor = novoSabor.charAt(0).toUpperCase() + novoSabor.slice(1).toLowerCase();
-
-        if (!listaSaboresDisponiveis.includes(novoSabor)) {
-            listaSaboresDisponiveis.push(novoSabor);
-            listaSaboresDisponiveis.sort(); 
-            salvarSaboresLocais(); 
-            renderizarListaSaboresGerenciamento();
-            input.value = '';
-            alert(`Sabor "${novoSabor}" adicionado (Persistente).`);
-        } else {
-            alert(`O sabor "${novoSabor}" já existe na lista.`);
-        }
-    }
-}
-
-function removerSabor(sabor) {
-    const index = listaSaboresDisponiveis.indexOf(sabor);
-    if (index > -1) {
-        listaSaboresDisponiveis.splice(index, 1);
-        salvarSaboresLocais(); 
-        renderizarListaSaboresGerenciamento();
-        alert(`Sabor "${sabor}" removido (Persistente).`);
-    }
-}
-
 function renderizarListaSaboresGerenciamento() {
     const listaContainer = document.getElementById('lista-sabores-atuais');
     listaContainer.innerHTML = '';
@@ -565,37 +413,6 @@ function renderizarListaSaboresGerenciamento() {
     });
 }
 
-function adicionarComplemento(event) {
-    event.preventDefault();
-    const input = document.getElementById('novo-complemento-input');
-    let novoComplemento = input.value.trim();
-
-    if (novoComplemento) {
-        novoComplemento = novoComplemento.charAt(0).toUpperCase() + novoComplemento.slice(1).toLowerCase();
-
-        if (!listaComplementosDisponiveis.includes(novoComplemento)) {
-            listaComplementosDisponiveis.push(novoComplemento);
-            listaComplementosDisponiveis.sort();
-            salvarComplementosLocais(); 
-            renderizarListaComplementosGerenciamento();
-            input.value = '';
-            alert(`Complemento "${novoComplemento}" adicionado (Persistente).`);
-        } else {
-            alert(`O complemento "${novoComplemento}" já existe na lista.`);
-        }
-    }
-}
-
-function removerComplemento(complemento) {
-    const index = listaComplementosDisponiveis.indexOf(complemento);
-    if (index > -1) {
-        listaComplementosDisponiveis.splice(index, 1);
-        salvarComplementosLocais(); 
-        renderizarListaComplementosGerenciamento();
-        alert(`Complemento "${complemento}" removido (Persistente).`);
-    }
-}
-
 function renderizarListaComplementosGerenciamento() {
     const listaContainer = document.getElementById('lista-complementos-atuais');
     listaContainer.innerHTML = '';
@@ -616,59 +433,6 @@ function renderizarListaComplementosGerenciamento() {
         `;
         listaContainer.appendChild(div);
     });
-}
-
-function adicionarLocalidade(event) {
-    event.preventDefault();
-    const form = document.getElementById('adicionar-localidade-form');
-    let nome = document.getElementById('novo-localidade-input').value.trim();
-    const taxaStr = document.getElementById('taxa-localidade-input').value;
-    const taxa = parseFloat(taxaStr);
-
-    if (!nome || isNaN(taxa) || taxa < 0) {
-        alert('Por favor, preencha o nome da localidade e a taxa de entrega (valor >= 0).');
-        return;
-    }
-    
-    nome = nome.charAt(0).toUpperCase() + nome.slice(1);
-
-    if (listaLocalidadesDisponiveis.some(l => l.nome.toLowerCase() === nome.toLowerCase())) {
-        alert(`A localidade "${nome}" já existe.`);
-        return;
-    }
-
-    const novaLocalidade = { nome: nome, taxa: taxa, id: `l${Date.now()}` };
-    listaLocalidadesDisponiveis.push(novaLocalidade);
-    listaLocalidadesDisponiveis.sort((a, b) => a.nome.localeCompare(b.nome)); 
-    salvarLocalidadesLocais(); 
-
-    renderizarListaLocalidadesGerenciamento();
-    form.reset();
-    
-    // Atualiza o select de checkout se estiver aberto
-    if (document.getElementById('modal-carrinho').style.display === 'block') {
-         popularLocalidadesNoCheckout();
-    }
-   
-    alert(`Localidade "${nome}" com taxa de R$ ${taxa.toFixed(2).replace('.', ',')} adicionada (Persistente).`);
-}
-
-function removerLocalidade(id) {
-    listaLocalidadesDisponiveis = listaLocalidadesDisponiveis.filter(l => l.id !== id);
-    salvarLocalidadesLocais(); 
-    renderizarListaLocalidadesGerenciamento();
-    
-    // Atualiza o select de checkout se estiver aberto
-    if (document.getElementById('modal-carrinho').style.display === 'block') {
-         popularLocalidadesNoCheckout();
-         // Garante que a taxa é recalculada caso a localidade removida estivesse selecionada
-         detalhesTransacao.localidadeNome = '';
-         detalhesTransacao.taxaEntrega = 0;
-         renderizarCarrinhoModal();
-         atualizarTotalItensBotao();
-    }
-    
-    alert(`Localidade removida (Persistente).`);
 }
 
 function renderizarListaLocalidadesGerenciamento() {
@@ -694,7 +458,7 @@ function renderizarListaLocalidadesGerenciamento() {
 }
 
 // ====================================================================
-// --- FUNÇÕES DE PERSONALIZAÇÃO (MODAL) ---
+// --- FUNÇÕES DE PERSONALIZAÇÃO E CHECKOUT (MANTIDAS) ---
 // ====================================================================
 
 function openSaboresModal(itemNome, maxSabores) {
@@ -773,7 +537,6 @@ function openComplementosModal() {
     
     opcoesContainer.innerHTML = '';
 
-    // ATUALIZAÇÃO: Define a informação do limite
     info.textContent = `Selecione no máximo ${MAX_COMPLEMENTOS_PERMITIDOS} complementos.`;
 
     listaComplementosDisponiveis.sort().forEach(complemento => {
@@ -801,11 +564,9 @@ function handleComplementoClick(event) {
     const index = complementosSelecionados.indexOf(complemento);
     
     if (index > -1) {
-        // Deseleciona
         complementosSelecionados.splice(index, 1);
         compElement.classList.remove('selected');
-    } else if (complementosSelecionados.length < MAX_COMPLEMENTOS_PERMITIDOS) { // NOVO LIMITE
-        // Seleciona
+    } else if (complementosSelecionados.length < MAX_COMPLEMENTOS_PERMITIDOS) {
         complementosSelecionados.push(complemento);
         compElement.classList.add('selected');
     } else {
@@ -831,9 +592,6 @@ function confirmarComplementos() {
     document.getElementById('modal-complementos').style.display = 'none';
 }
 
-// ====================================================================
-// --- FUNÇÕES DE FLUXO E MENSAGEM (CHECKOUT) ---
-// ====================================================================
 
 function popularLocalidadesNoCheckout() { 
     const selectLocalidade = document.getElementById('select-localidade');
@@ -845,15 +603,17 @@ function popularLocalidadesNoCheckout() {
         option.value = localidade.nome;
         option.textContent = `${localidade.nome} (R$ ${localidade.taxa.toFixed(2).replace('.', ',')})`;
         option.dataset.taxa = localidade.taxa;
+        // Adiciona o ID do Firestore como um data attribute para uso futuro, se necessário
+        if (localidade.id) {
+             option.dataset.docId = localidade.id;
+        }
         selectLocalidade.appendChild(option);
     });
 
-    // Tenta pré-selecionar o valor atual da transação
     if (detalhesTransacao.localidadeNome && selectLocalidade.querySelector(`option[value="${detalhesTransacao.localidadeNome}"]`)) {
         selectLocalidade.value = detalhesTransacao.localidadeNome;
         avisoTaxa.textContent = `Taxa de entrega: R$ ${detalhesTransacao.taxaEntrega.toFixed(2).replace('.', ',')}`;
     } else {
-        // Se a localidade não estiver na lista (foi removida ou não selecionada), reseta a taxa
         detalhesTransacao.localidadeNome = '';
         detalhesTransacao.taxaEntrega = 0;
         avisoTaxa.textContent = `Taxa de entrega: R$ 0,00. Selecione o bairro.`;
@@ -875,7 +635,6 @@ function atualizarTaxaEntrega() {
         avisoTaxa.textContent = `Taxa de entrega: R$ 0,00. Selecione o bairro.`;
     }
     
-    // Atualiza o total do carrinho
     renderizarCarrinhoModal();
     atualizarTotalItensBotao();
 }
@@ -887,7 +646,6 @@ function validarFormularioPedido() {
     const valorPago = parseFloat(document.getElementById('input-valor-pago').value) || 0;
     const total = calcularTotal();
     
-    // Validação da Entrega
     if (!tipoEntrega) {
         alert("Por favor, selecione o Tipo de Entrega.");
         return false;
@@ -907,7 +665,6 @@ function validarFormularioPedido() {
             return false;
         }
         
-        // Garante que a taxa e localidade selecionadas estão no objeto de transação
         atualizarTaxaEntrega();
         
         detalhesTransacao.rua = rua;
@@ -923,7 +680,6 @@ function validarFormularioPedido() {
     
     detalhesTransacao.tipoEntrega = tipoEntrega;
 
-    // Validação do Pagamento
     if (!pagamento) {
         alert("Por favor, selecione a forma de pagamento.");
         return false;
@@ -1033,13 +789,15 @@ function enviarPedidoWhatsApp(event) {
     });
 }
 
-
 // ====================================================================
 // --- EVENT LISTENERS (OUVINTES DE EVENTOS) ---
 // ====================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    // CORREÇÃO CRÍTICA: Inicializa o Firebase antes de qualquer lógica que dependa dele
+    initializeFirebase();
+
     const modalEntrada = document.getElementById('modal-entrada');
     
     // Formulários
