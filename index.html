@@ -8,12 +8,12 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
-    </head>
+</head>
 <body>
 
     <div id="modal-entrada" class="modal-entrada">
         <div class="modal-entrada-conteudo">
-            <img src="logo.png" alt="Logo Pastel Central" class="modal-logo">
+            <img src="logo.jpg" alt="Logo Pastel Central" class="modal-logo">
             <h2>Bem-vindo(a)!</h2>
             <p id="auth-info-text">Acesse para começar seu pedido ou entre como Administrador.</p>
             
@@ -28,189 +28,142 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="acesso-rapido-whatsapp">WhatsApp:</label>
-                        <input 
-                            type="tel" 
-                            id="acesso-rapido-whatsapp" 
-                            maxlength="15" 
-                            placeholder="(81) 91234-5678" 
-                            required
-                        >
+                        <label for="acesso-rapido-whatsapp">WhatsApp (somente números):</label>
+                        <input type="tel" id="acesso-rapido-whatsapp" pattern="[0-9]{10,11}" placeholder="Ex: 81999998888" required>
                     </div>
 
-                    <button type="submit" class="btn-primary">Acessar e Pedir</button>
-                </form>
-                
-                <div class="separator-auth" style="display: none;">Ou</div>
-
-                <form id="form-login-admin" class="auth-form" style="display: none;">
-                    <h4>Acesso Restrito</h4>
-                    
-                    <div class="form-group">
-                        <label for="admin-email">Email (Acesso Admin):</label>
-                        <input type="email" id="admin-email" value="admin@pastelcentral.com" placeholder="admin@pastelcentral.com" autocomplete="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="Tela-cliente">Senha Admin:</label>
-                        <input type="password" id="Tela-cliente" placeholder="Senha" autocomplete="current-password" required>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Entrar como Administrador</button>
+                    <button type="submit" class="btn-primary">Entrar / Cadastrar</button>
                 </form>
 
             </div>
-            </div>
+        </div>
     </div>
     
     <header>
-        <div class="header-content">
-            <img src="logo.png" alt="Logo Pastel Central" class="header-logo">
-            <div class="header-text">
-                <h1>Pastel Central</h1>
-                <p>O sabor que você ama, na sua mão!</p>
-            </div>
-        </div>
+        <img src="logo.jpg" alt="Logo" class="header-logo">
+        <h1>Pastel Central</h1>
+        <p>Seu pedido rápido e personalizado.</p>
     </header>
 
-    <div class="tab-buttons">
-        <button id="tab-cardapio" class="active">Cardápio</button>
-        <button id="tab-gerenciamento" style="display: none;">Gerenciar Produtos</button>
-    </div>
+    <main class="container">
+        <nav class="abas">
+            <button id="tab-cardapio" class="aba-btn active">Cardápio</button>
+            <button id="btn-gerenciamento" class="aba-btn" style="display:none;">Gerenciamento</button>
+            <button id="tab-carrinho" class="aba-btn">Carrinho (<span id="contador-carrinho">0</span>)</button>
+        </nav>
 
-    <main class="menu-container">
-        
-        <section id="categoria-pastel" class="categoria-section">
-            <h2 class="categoria-titulo">Pastéis Salgados</h2>
-        </section>
-
-        <section id="categoria-coxinha" class="categoria-section">
-            <h2 class="categoria-titulo">Coxinhas</h2>
-        </section>
-
-        <section id="categoria-doces" class="categoria-section">
-            <h2 class="categoria-titulo">Pastéis Doces e Sobremesas</h2>
-        </section>
-        
-        <section id="categoria-bebidas" class="categoria-section">
-            <h2 class="categoria-titulo">Bebidas Geladas</h2>
-        </section>
-
-    </main>
-
-    <section id="gerenciamento" class="gerenciamento-container" style="display: none;">
-        <h2>Área de Gerenciamento</h2>
-        
-        <form id="adicionar-produto-form" class="gerenciamento-form">
-            <h3>Adicionar Novo Produto</h3>
-            
-            <div class="form-group">
-                <label for="categoria-produto">Categoria:</label>
-                <select id="categoria-produto" required>
-                    <option value="" disabled selected>Selecione a Categoria</option>
-                    <option value="pastel">Pastel Salgado</option>
-                    <option value="coxinha">Coxinha</option>
-                    <option value="doces">Doce/Sobremesa</option>
-                    <option value="bebidas">Bebida</option>
-                </select>
+        <div id="aba-cardapio" class="conteudo-aba active">
             </div>
 
-            <div class="form-group">
-                <label for="nome-produto">Nome do Produto:</label>
-                <input type="text" id="nome-produto" required>
-            </div>
-            
-            <div class="form-group combo-check-group">
-                <input type="checkbox" id="is-personalizavel">
-                <label for="is-personalizavel" class="checkbox-label">Este item requer seleção de sabores?</label>
-            </div>
+        <div id="aba-gerenciamento" class="conteudo-aba" style="display: none;">
+            <h2 class="aba-titulo">Controle do Site</h2>
 
-            <div class="form-group" id="max-sabores-group" style="display: none;">
-                <label for="max-sabores">Máximo de Sabores a Escolher:</label>
-                <input type="number" id="max-sabores" value="5" min="1">
-            </div>
-
-            <div class="form-group">
-                <label for="descricao-produto">Descrição:</label>
-                <textarea id="descricao-produto" rows="2" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="preco-produto">Preço (R$):</label>
-                <input type="number" id="preco-produto" step="0.01" min="0" required>
-            </div>
-            <button type="submit" id="btn-adicionar" class="btn-primary">Adicionar ao Cardápio</button>
-        </form>
-
-        <div class="gerenciamento-section">
-            <h3 class="lista-titulo">Remover Produtos Existentes</h3>
-            <div id="lista-produtos-gerenciar">
-                <p class="aviso-gerenciamento">Carregando produtos...</p>
-            </div>
-        </div>
-        
-        <div class="gerenciamento-section">
-            <h3 class="lista-titulo">Gerenciar Opções de Sabores</h3>
-            <div id="gerenciamento-sabores-container">
-                <form id="adicionar-sabor-form" class="sabor-form">
-                    <div class="form-group">
-                        <label for="novo-sabor-input">Adicionar Novo Sabor:</label>
-                        <input type="text" id="novo-sabor-input" placeholder="Ex: Camarão com Catupiry" required>
+            <section id="gerenciar-categorias" class="secao-gerenciamento">
+                <h3 class="secao-titulo">Gerenciar Categorias</h3>
+                <form id="form-adicionar-categoria" class="form-gerenciamento">
+                    <div class="form-group-inline">
+                        <input type="text" id="input-nome-categoria" placeholder="Nome da Categoria (Ex: Pastéis Salgados)" required>
+                        <button type="submit" class="btn-secundario">Adicionar Categoria</button>
                     </div>
-                    <button type="submit" id="btn-adicionar-sabor" class="btn-primary">Adicionar Sabor</button>
                 </form>
+                <h4>Categorias Atuais:</h4>
+                <ul id="lista-categorias-atuais" class="lista-gerenciamento">
+                    </ul>
+            </section>
+            
+            <hr>
 
-                <h4 class="sabores-lista-titulo">Sabores Atuais:</h4>
-                <div id="lista-sabores-atuais" class="sabores-opcoes-grid">
-                    <p class="aviso-gerenciamento">Carregando sabores...</p>
-                </div>
-            </div>
-        </div>
-        
-    </section>
-
-    <div id="carrinho-flutuante">
-        <button id="ver-carrinho-btn">
-            Ver Carrinho (<span id="total-itens">0</span> itens)
-        </button>
-    </div>
-
-    <div id="modal-carrinho" class="modal">
-        <div class="modal-conteudo">
-            <span class="fechar-modal">&times;</span>
-            <h3>Seu Pedido</h3>
-            <ul id="lista-carrinho">
-                <li class="carrinho-vazio">Seu carrinho está vazio.</li>
-            </ul>
-            <p class="total">Total: <span id="valor-total">R$ 0,00</span></p>
-
-            <form id="form-finalizar-pedido">
-                <h4>Detalhes da Entrega</h4>
+            <section id="gerenciar-produtos" class="secao-gerenciamento">
+                <h3 class="secao-titulo">Gerenciar Produtos</h3>
+                <form id="form-adicionar-produto" class="form-gerenciamento">
+                    <div class="form-group">
+                        <select id="select-categoria-produto" required>
+                            <option value="">Selecione a Categoria</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="input-nome-produto" placeholder="Nome do Produto (Ex: Pastel Grande)" required>
+                    </div>
+                    <div class="form-group-inline">
+                        <input type="number" id="input-preco-produto" step="0.01" min="0.01" placeholder="Preço (R$)" required>
+                        <input type="number" id="input-max-sabores" min="0" value="0" placeholder="Máx. Sabores (0 para não personalizável)">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="input-descricao-produto" placeholder="Descrição do Produto (Opcional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn-secundario">Adicionar Produto</button>
+                </form>
                 
-                <div class="form-group">
-                    <label for="input-rua">Rua/Avenida:</label>
-                    <input type="text" id="input-rua" required>
-                </div>
-                <div class="form-group-inline">
-                    <div class="form-group">
-                        <label for="input-numero">Nº:</label>
-                        <input type="text" id="input-numero" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="input-referencia">Referência/Apto:</label>
-                        <input type="text" id="input-referencia" placeholder="Ex: Ao lado do mercado">
-                    </div>
-                </div>
+                <h4>Produtos Atuais:</h4>
+                <ul id="lista-produtos-gerenciar" class="lista-gerenciamento">
+                    </ul>
+            </section>
+            
+            <hr>
 
-                <h4>Forma de Pagamento</h4>
+            <section id="gerenciar-sabores" class="secao-gerenciamento">
+                <h3 class="secao-titulo">Gerenciar Sabores</h3>
+                <form id="form-adicionar-sabor" class="form-gerenciamento">
+                    <div class="form-group-inline">
+                        <input type="text" id="input-nome-sabor" placeholder="Nome do Sabor (Ex: Charque)" required>
+                        <button type="submit" class="btn-secundario">Adicionar Sabor</button>
+                    </div>
+                </form>
+                <h4>Sabores Atuais:</h4>
+                <ul id="lista-sabores-atuais" class="lista-gerenciamento">
+                    </ul>
+            </section>
+
+            <hr>
+
+            <section id="gerenciar-complementos" class="secao-gerenciamento">
+                <h3 class="secao-titulo">Gerenciar Complementos</h3>
+                <form id="form-adicionar-complemento" class="form-gerenciamento">
+                    <div class="form-group-inline">
+                        <input type="text" id="input-nome-complemento" placeholder="Nome do Complemento (Ex: Bacon)" required>
+                        <input type="number" id="input-preco-complemento" step="0.01" min="0.01" placeholder="Preço (R$)" required>
+                        <button type="submit" class="btn-secundario">Adicionar Complemento</button>
+                    </div>
+                </form>
+                <h4>Complementos Atuais:</h4>
+                <ul id="lista-complementos-atuais" class="lista-gerenciamento">
+                    </ul>
+            </section>
+        </div>
+
+        <div id="aba-carrinho" class="conteudo-aba" style="display: none;">
+            <h2 class="aba-titulo">Seu Pedido</h2>
+
+            <ul id="lista-carrinho">
+                </ul>
+            
+            <div id="resumo-carrinho" class="resumo-carrinho">
+                <p>Subtotal: <span id="carrinho-subtotal">R$ 0,00</span></p>
+                <p>Taxa de Entrega: <span id="carrinho-taxa">a confirmar</span></p> 
+                <h3>Total Estimado: <span id="carrinho-total">R$ 0,00</span></h3>
+            </div>
+
+            <form id="form-checkout" class="form-checkout">
+                <h4>1. Endereço de Entrega</h4>
+                <div class="form-group-inline">
+                    <input type="text" id="input-rua" placeholder="Rua e Bairro" required>
+                    <input type="text" id="input-numero" placeholder="Nº" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="input-referencia" placeholder="Ponto de Referência (Opcional)">
+                </div>
+                
+                <h4>2. Forma de Pagamento</h4>
                 <div class="form-group">
                     <select id="select-pagamento" required>
                         <option value="" disabled selected>Selecione a forma de pagamento</option>
-                        <option value="pix">PIX</option>
-                        <option value="cartao">Cartão de Crédito/Débito</option>
                         <option value="dinheiro">Dinheiro</option>
+                        <option value="pix">Pix (A loja enviará a chave)</option>
+                        <option value="cartao">Cartão de Crédito/Débito</option>
                     </select>
                 </div>
 
-                <div id="troco-group" class="form-group" style="display: none;">
+                <div class="form-group" id="container-troco" style="display: none;">
                     <label for="input-valor-pago">Valor para Troco (R$):</label>
                     <input type="number" id="input-valor-pago" step="0.01" min="0" placeholder="Ex: 50.00">
                     <p class="aviso-troco" id="aviso-troco">Informe o valor que será entregue para calcular o troco.</p>
@@ -221,7 +174,7 @@
 
             <p class="aviso-whatsapp-rodape">Atenção: A loja confirmará a taxa de entrega e o tempo de envio.</p>
         </div>
-    </div>
+    </main>
     
     <div id="modal-sabores" class="modal" style="z-index: 1002;">
         <div class="modal-conteudo">
@@ -234,13 +187,48 @@
             
             <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
             
-            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+            <button id="finalizar-sabores-btn" class="btn-primary" disabled>Próximo: Escolher Complementos</button>
         </div>
     </div>
 
-    <footer>
-        &copy; 2025 Pastel Central. Todos os direitos reservados.
-    </footer>
+    <div id="modal-complementos" class="modal" style="z-index: 1003;">
+        <div class="modal-conteudo">
+            <span class="fechar-modal fechar-complementos">&times;</span>
+            <h3 id="complementos-modal-titulo">Escolha seus Complementos</h3>
+            <p id="complementos-modal-info" class="modal-info-text">Selecione os adicionais para o seu item.</p>
+
+            <div id="complementos-opcoes" class="complementos-opcoes-lista">
+                </div>
+
+            <button id="finalizar-complementos-btn" class="btn-primary">Adicionar ao Carrinho</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <script>
+        // Seus dados de configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPIZ9g12wdmyJkXSTwmUE7Z5W94sNI7mA",
+            authDomain: "pc-db1.firebaseapp.com",
+            projectId: "pc-db1",
+            storageBucket: "pc-db1.firebasestorage.app",
+            messagingSenderId: "138720851669",
+            appId: "1:138720851669:web:d2971d08a1ec58b5f2145c",
+            databaseURL: "https://pc-db1-default-rtdb.firebaseio.com" // URL do Realtime DB
+        };
+
+        // Inicializar o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        
+        // Variáveis Globais de Usuário e Admin
+        let usuarioAtual = null; 
+        let isAdmin = false; 
+    </script>
 
     <script src="script.js"></script>
 </body>
