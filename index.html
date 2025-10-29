@@ -8,9 +8,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    
     </head>
 <body>
 
@@ -41,7 +38,10 @@
                         >
                     </div>
 
-
+                    <div class="form-group">
+                        <label for="acesso-rapido-email">Email (Opcional):</label>
+                        <input type="email" id="acesso-rapido-email" placeholder="seu-email@dominio.com">
+                    </div>
 
                     <button type="submit" class="btn-primary">Entrar e Pedir</button>
                 </form>
@@ -51,10 +51,6 @@
                 <form id="form-login-admin" class="auth-form" style="display: none;">
                     <h4>Acesso Restrito</h4>
                     
-                    <div class="form-group">
-                        <label for="admin-email">Email (Acesso Admin):</label>
-                        <input type="email" id="admin-email" placeholder="admin@pastelcentral.com" autocomplete="username" required>
-                    </div>
                     <div class="form-group">
                         <label for="Tela-cliente">Senha Admin:</label>
                         <input type="password" id="Tela-cliente" placeholder="Senha" autocomplete="current-password" required>
@@ -99,10 +95,6 @@
         <section id="categoria-bebidas" class="categoria-section">
             <h2 class="categoria-titulo">Bebidas Geladas</h2>
         </section>
-        
-        <section id="categoria-complementos" class="categoria-section">
-            <h2 class="categoria-titulo">Complementos (Toppings e Extras)</h2>
-        </section>
 
     </main>
 
@@ -120,7 +112,7 @@
                     <option value="coxinha">Coxinha</option>
                     <option value="doces">Doce/Sobremesa</option>
                     <option value="bebidas">Bebida</option>
-                    <option value="complementos">Complemento</option> </select>
+                </select>
             </div>
 
             <div class="form-group">
@@ -244,21 +236,6 @@
             <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
             
             <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
-        </div>
-    </div>
-
-    <div id="modal-complementos" class="modal" style="z-index: 1002;">
-        <div class="modal-conteudo">
-            <span class="fechar-modal fechar-complementos">&times;</span>
-            <h3 id="complementos-modal-titulo">Adicionar Complementos</h3>
-            <p id="complementos-modal-info" class="modal-info-text">Selecione os adicionais que deseja:</p>
-
-            <div id="complementos-opcoes" class="sabores-opcoes-grid">
-                </div>
-            
-            <p id="complementos-total" class="contador-text">Total de Complementos: R$ 0,00</p>
-            
-            <button id="confirmar-complementos-btn" class="btn-primary">Adicionar ao Carrinho</button>
         </div>
     </div>
 
