@@ -49,7 +49,7 @@ function initializeFirebase() {
     };
 
     // Verifica se as chaves foram preenchidas (chave padrão indica que precisa ser configurada)
-    if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
+    if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI' || firebaseConfig.projectId === 'pc-db-1813a') {
         console.error("ERRO: Configure as chaves do Firebase no index.html antes de iniciar.");
         alert("ERRO: Configure as chaves do Firebase no index.html.");
         return; 
@@ -65,7 +65,7 @@ function initializeFirebase() {
 }
 
 // --------------------------------------------------
-// FUNÇÕES DE LEITURA (Substitui carregarDadosLocais)
+// FUNÇÕES DE LEITURA (Carrega dados do Firestore)
 // --------------------------------------------------
 
 async function fetchCollectionData(collectionName, defaultData) {
@@ -79,18 +79,21 @@ async function fetchCollectionData(collectionName, defaultData) {
                 for (const item of defaultData) {
                     await db.collection(collectionName).add(item);
                 }
-                return defaultData;
+                // Recarrega após preencher
+                const newSnapshot = await db.collection(collectionName).get();
+                return newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             }
             return [];
         }
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-        console.error(`Erro ao carregar dados de ${collectionName}. Usando dados padrão.`, error);
-        return defaultData;
+        console.error(`Erro ao carregar dados de ${collectionName}. Verifique as regras de segurança do Firestore.`, error);
+        return []; // Retorna vazio em caso de erro de conexão/regra
     }
 }
 
 async function carregarDadosDoFirebase() {
+    // Dados padrão para popular o Firestore na primeira vez
     const defaultProdutos = [
         { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!" },
         { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido." },
@@ -98,7 +101,7 @@ async function carregarDadosDoFirebase() {
     ];
     const defaultSabores = ["Carne", "Frango", "4 Queijos", "Chocolate", "Goiabada"];
     const defaultComplementos = ["Catupiry", "Cheddar", "Bacon"]; 
-    const defaultLocalidades = [{ nome: "Centro (Paudalho)", taxa: 5.00 }, { nome: "Área Rural", taxa: 15.00 }];
+    const defaultLocalidades = [{ nome: "Centro (Exemplo)", taxa: 5.00 }, { nome: "Área Rural (Exemplo)", taxa: 15.00 }];
 
     // Carrega/inicializa os dados no Firebase
     produtosCardapio = await fetchCollectionData('produtos', defaultProdutos);
@@ -116,6 +119,364 @@ function salvarSaboresLocais() { /* Não é mais necessário */ }
 function salvarComplementosLocais() { /* Não é mais necessário */ }
 function salvarLocalidadesLocais() { /* Não é mais necessário */ }
 
+
+// ====================================================================
+// --- FUNÇÕES DE RENDERIZAÇÃO E CRUD (ADMIN) ---
+// ====================================================================
+
+// --- 1. PRODUTOS (ADICIONAR/REMOVER) ---
+
+async function carregarCardapioDaAPI() {
+    if (!db) {
+        // Se o Firebase não estiver pronto, usa um array vazio e renderiza
+        produtosCardapio = []; 
+        renderizarCardapio();
+        return;
+    }
+    
+    // Recarrega todos os dados
+    await carregarDadosDoFirebase();
+    
+    renderizarCardapio();
+    if (acessoGerenciamentoLiberado) {
+        renderizarListaGerenciamento();
+    }
+}
+
+async function adicionarProdutoAoCardapio(event) {
+    event.preventDefault();
+    
+    if (!db || !acessoGerenciamentoLiberado) {
+        alert("Acesso negado ou Firebase não conectado.");
+        return;
+    }
+
+    const nome = document.getElementById('nome-produto').value.trim();
+    const preco = parseFloat(document.getElementById('preco-produto').value).toFixed(2);
+    const categoria = document.getElementById('categoria-produto').value;
+    const descricao = document.getElementById('descricao-produto').value.trim();
+    const isPersonalizavel = document.getElementById('is-personalizavel').checked ? 'sim' : 'nao';
+    const maxSabores = document.getElementById('max-sabores').value;
+
+    if (produtosCardapio.some(p => p.nome.toLowerCase() === nome.toLowerCase())) {
+        alert("Já existe um produto com este nome.");
+        return;
+    }
+
+    const novoProduto = {
+        nome: nome,
+        preco: preco,
+        categoria: categoria,
+        descricao: descricao,
+        personalizavel: isPersonalizavel,
+        maxSabores: isPersonalizavel === 'sim' ? maxSabores : '0',
+    };
+
+    try {
+        await db.collection("produtos").add(novoProduto);
+        alert(`Produto "${nome}" adicionado com sucesso ao cardápio!`);
+        document.getElementById('adicionar-produto-form').reset();
+        await carregarCardapioDaAPI(); // Recarrega e renderiza
+    } catch (error) {
+        console.error("Erro ao adicionar produto:", error);
+        alert("Erro ao adicionar produto. Verifique as regras de segurança do Firebase (deve ser 'allow read, write: if true').");
+    }
+}
+
+async function removerProdutoDoCardapio(nomeProduto) {
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    try {
+        const produto = produtosCardapio.find(p => p.nome === nomeProduto);
+        if (produto && produto.id) {
+            await db.collection("produtos").doc(produto.id).delete();
+            await carregarCardapioDaAPI(); 
+            alert(`Produto "${nomeProduto}" removido com sucesso.`);
+        } else {
+            alert("Produto não encontrado no banco de dados.");
+        }
+    } catch (error) {
+        console.error("Erro ao remover produto:", error);
+        alert("Erro ao remover produto. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+// --- 2. SABORES (ADICIONAR/REMOVER) ---
+
+async function adicionarSabor(event) {
+    event.preventDefault();
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    const saborNome = document.getElementById('novo-sabor-input').value.trim();
+    if (listaSaboresDisponiveis.some(s => s.toLowerCase() === saborNome.toLowerCase())) {
+        alert("Este sabor já existe.");
+        return;
+    }
+
+    try {
+        await db.collection("sabores").add({ nome: saborNome });
+        alert(`Sabor "${saborNome}" adicionado com sucesso!`);
+        document.getElementById('adicionar-sabor-form').reset();
+        await carregarCardapioDaAPI(); 
+        renderizarListaSaboresGerenciamento(); 
+    } catch (error) {
+        console.error("Erro ao adicionar sabor:", error);
+        alert("Erro ao adicionar sabor. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+async function removerSabor(saborNome) {
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    try {
+        // Busca o documento pelo campo 'nome' para obter o ID
+        const snapshot = await db.collection("sabores").where("nome", "==", saborNome).get();
+        if (!snapshot.empty) {
+            await db.collection("sabores").doc(snapshot.docs[0].id).delete();
+            await carregarCardapioDaAPI(); 
+            renderizarListaSaboresGerenciamento(); 
+            alert(`Sabor "${saborNome}" removido com sucesso.`);
+        }
+    } catch (error) {
+        console.error("Erro ao remover sabor:", error);
+        alert("Erro ao remover sabor. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+// --- 3. COMPLEMENTOS (ADICIONAR/REMOVER) ---
+
+async function adicionarComplemento(event) {
+    event.preventDefault();
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    const complementoNome = document.getElementById('novo-complemento-input').value.trim();
+    if (listaComplementosDisponiveis.some(c => c.toLowerCase() === complementoNome.toLowerCase())) {
+        alert("Este complemento já existe.");
+        return;
+    }
+
+    try {
+        await db.collection("complementos").add({ nome: complementoNome });
+        alert(`Complemento "${complementoNome}" adicionado com sucesso!`);
+        document.getElementById('adicionar-complemento-form').reset();
+        await carregarCardapioDaAPI(); 
+        renderizarListaComplementosGerenciamento(); 
+    } catch (error) {
+        console.error("Erro ao adicionar complemento:", error);
+        alert("Erro ao adicionar complemento. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+async function removerComplemento(complementoNome) {
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    try {
+        const snapshot = await db.collection("complementos").where("nome", "==", complementoNome).get();
+        if (!snapshot.empty) {
+            await db.collection("complementos").doc(snapshot.docs[0].id).delete();
+            await carregarCardapioDaAPI(); 
+            renderizarListaComplementosGerenciamento(); 
+            alert(`Complemento "${complementoNome}" removido com sucesso.`);
+        }
+    } catch (error) {
+        console.error("Erro ao remover complemento:", error);
+        alert("Erro ao remover complemento. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+// --- 4. LOCALIDADES (ADICIONAR/REMOVER) ---
+
+async function adicionarLocalidade(event) {
+    event.preventDefault();
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    const localidadeNome = document.getElementById('novo-localidade-input').value.trim();
+    const taxa = parseFloat(document.getElementById('taxa-localidade-input').value);
+
+    if (listaLocalidadesDisponiveis.some(l => l.nome.toLowerCase() === localidadeNome.toLowerCase())) {
+        alert("Esta localidade já existe.");
+        return;
+    }
+
+    const novaLocalidade = {
+        nome: localidadeNome,
+        taxa: taxa,
+    };
+
+    try {
+        await db.collection("localidades").add(novaLocalidade);
+        alert(`Localidade "${localidadeNome}" (R$ ${taxa.toFixed(2).replace('.', ',')}) adicionada com sucesso!`);
+        document.getElementById('adicionar-localidade-form').reset();
+        await carregarCardapioDaAPI(); 
+        renderizarListaLocalidadesGerenciamento(); 
+    } catch (error) {
+        console.error("Erro ao adicionar localidade:", error);
+        alert("Erro ao adicionar localidade. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+async function removerLocalidade(localidadeId) {
+    if (!db || !acessoGerenciamentoLiberado) return;
+
+    try {
+        await db.collection("localidades").doc(localidadeId).delete();
+        await carregarCardapioDaAPI(); 
+        renderizarListaLocalidadesGerenciamento(); 
+        alert("Localidade removida com sucesso.");
+    } catch (error) {
+        console.error("Erro ao remover localidade:", error);
+        alert("Erro ao remover localidade. Verifique as regras de segurança do Firebase.");
+    }
+}
+
+// ====================================================================
+// --- FUNÇÕES DE RENDERIZAÇÃO E CARDÁPIO (MANTIDAS) ---
+// ====================================================================
+
+function renderizarCardapio() {
+    const categorias = ['pastel', 'coxinha', 'doces', 'bebidas'];
+    categorias.forEach(cat => {
+        const container = document.getElementById(`categoria-${cat}`);
+        // Mantém o título, limpa o restante
+        const titulo = container.querySelector('.categoria-titulo');
+        container.innerHTML = '';
+        container.appendChild(titulo);
+        
+        const lista = document.createElement('div');
+        lista.classList.add('lista-produtos');
+        container.appendChild(lista);
+        
+        const produtosFiltrados = produtosCardapio.filter(p => p.categoria === cat);
+
+        if (produtosFiltrados.length === 0) {
+            lista.innerHTML = '<p class="aviso-vazio">Nenhum produto cadastrado nesta categoria.</p>';
+        }
+
+        produtosFiltrados.forEach(produto => {
+            const nome = produto.nome;
+            const preco = parseFloat(produto.preco);
+            const isPersonalizavel = produto.personalizavel === 'sim';
+            
+            // Verifica se o item já está no carrinho (apenas o tipo)
+            const quantidadeAtual = carrinho[nome] ? carrinho[nome].length : 0;
+            const tipoBotao = isPersonalizavel ? 'adicionar-personalizado' : 'adicionar';
+            
+            const itemHTML = `
+                <div class="item-card" data-nome="${nome}" data-preco="${preco.toFixed(2)}" data-personalizavel="${produto.personalizavel}" data-max-sabores="${produto.maxSabores || 0}">
+                    <div class="item-info">
+                        <h3>${nome}</h3>
+                        <p class="descricao">${produto.descricao}</p>
+                        <p class="preco">R$ ${preco.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <div class="quantidade-controle">
+                        <button class="remover" data-item="${nome}" ${quantidadeAtual === 0 ? 'disabled' : ''}>-</button>
+                        <span class="quantidade" id="qty-${nome}">${quantidadeAtual}</span>
+                        <button class="${tipoBotao}" data-item="${nome}">+</button>
+                    </div>
+                </div>
+            `;
+            lista.innerHTML += itemHTML;
+        });
+    });
+}
+
+
+function renderizarListaGerenciamento() {
+    const listaContainer = document.getElementById('lista-produtos-gerenciar');
+    listaContainer.innerHTML = ''; 
+
+    if (produtosCardapio.length === 0) {
+        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum produto cadastrado no cardápio.</p>';
+        return;
+    }
+
+    produtosCardapio.forEach(produto => { 
+        const nome = produto.nome;
+        const preco = produto.preco;
+        const categoria = produto.categoria;
+        const isPersonalizavel = produto.personalizavel === 'sim'; 
+        const maxSabores = produto.maxSabores || 0;
+        
+        const categoriaLabel = categoria.charAt(0).toUpperCase() + categoria.slice(1);
+        const personalizavelLabel = isPersonalizavel ? ` - (${maxSabores} SABORES)` : '';
+
+        const div = document.createElement('div');
+        div.classList.add('item-gerenciar');
+        div.dataset.nome = nome;
+
+        div.innerHTML = `
+            <span>[${categoriaLabel}] ${nome}${personalizavelLabel} (R$ ${parseFloat(preco).toFixed(2).replace('.', ',')})</span>
+            <button class="item-gerenciar-remover-btn" data-item="${nome}">Remover</button>
+        `;
+        listaContainer.appendChild(div);
+    });
+}
+
+function renderizarListaSaboresGerenciamento() {
+    const listaContainer = document.getElementById('lista-sabores-atuais');
+    listaContainer.innerHTML = '';
+    
+    if (listaSaboresDisponiveis.length === 0) {
+        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum sabor cadastrado. Adicione um acima.</p>';
+        return;
+    }
+
+    listaSaboresDisponiveis.forEach(sabor => {
+        const div = document.createElement('div');
+        div.classList.add('sabor-item');
+        div.dataset.sabor = sabor;
+        
+        div.innerHTML = `
+            <span>${sabor}</span>
+            <button class="remover-sabor-btn" data-sabor="${sabor}">X</button>
+        `;
+        listaContainer.appendChild(div);
+    });
+}
+
+function renderizarListaComplementosGerenciamento() {
+    const listaContainer = document.getElementById('lista-complementos-atuais');
+    listaContainer.innerHTML = '';
+    
+    if (listaComplementosDisponiveis.length === 0) {
+        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum complemento cadastrado. Adicione um acima.</p>';
+        return;
+    }
+
+    listaComplementosDisponiveis.forEach(complemento => {
+        const div = document.createElement('div');
+        div.classList.add('sabor-item'); 
+        div.dataset.complemento = complemento;
+        
+        div.innerHTML = `
+            <span>${complemento}</span>
+            <button class="remover-complemento-btn" data-complemento="${complemento}">X</button>
+        `;
+        listaContainer.appendChild(div);
+    });
+}
+
+function renderizarListaLocalidadesGerenciamento() {
+    const listaContainer = document.getElementById('lista-localidades-atuais');
+    listaContainer.innerHTML = '';
+    
+    if (listaLocalidadesDisponiveis.length === 0) {
+        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhuma localidade cadastrada. Adicione uma acima.</p>';
+        return;
+    }
+
+    listaLocalidadesDisponiveis.forEach(localidade => {
+        const div = document.createElement('div');
+        div.classList.add('item-gerenciar'); 
+        div.dataset.id = localidade.id;
+        
+        div.innerHTML = `
+            <span>${localidade.nome} (Taxa: R$ ${localidade.taxa.toFixed(2).replace('.', ',')})</span>
+            <button class="remover-localidade-btn" data-id="${localidade.id}">Remover</button>
+        `;
+        listaContainer.appendChild(div);
+    });
+}
 
 // ====================================================================
 // --- FUNÇÕES DE MANIPULAÇÃO DE CARRINHO E CHECKOUT (MANTIDAS) ---
@@ -155,7 +516,8 @@ function atualizarTotalItensBotao() {
     document.getElementById('total-itens').textContent = totalItens;
 
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
-    const entregaSelecionada = detalhesTransacao.tipoEntrega !== '';
+    // Verifica se a entrega foi selecionada e se há itens
+    const entregaSelecionada = detalhesTransacao.tipoEntrega !== ''; 
 
     if (finalizarPedidoBtnForm) { 
         finalizarPedidoBtnForm.disabled = totalItens === 0 || !entregaSelecionada; 
@@ -283,7 +645,7 @@ function gerenciarCarrinho(itemNome, acao, itemPersonalizado = null) {
         }
     }
 
-    if (carrinho[itemNome].length === 0) {
+    if (carrinho[itemNome] && carrinho[itemNome].length === 0) { // Adicionado verificação extra de null/undefined
         delete carrinho[itemNome];
     }
 
@@ -352,109 +714,6 @@ function alternarAbas(abaAtivaId) {
         btnCardapio.classList.remove('active');
         btnGerenciamento.classList.add('active');
     }
-}
-
-// ====================================================================
-// --- FUNÇÕES DE RENDERIZAÇÃO E CRUD (ADMIN) - CONVERTIDAS PARA FIREBASE ---
-// ====================================================================
-
-// Funções de Gerenciamento de Produtos, Sabores, Complementos e Localidades... (CONVERTIDAS ACIMA)
-
-function renderizarListaGerenciamento() {
-    const listaContainer = document.getElementById('lista-produtos-gerenciar');
-    listaContainer.innerHTML = ''; 
-
-    if (produtosCardapio.length === 0) {
-        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum produto cadastrado no cardápio.</p>';
-        return;
-    }
-
-    produtosCardapio.forEach(produto => { 
-        const nome = produto.nome;
-        const preco = produto.preco;
-        const categoria = produto.categoria;
-        const isPersonalizavel = produto.personalizavel === 'sim'; 
-        const maxSabores = produto.maxSabores || 0;
-        
-        const categoriaLabel = categoria.charAt(0).toUpperCase() + categoria.slice(1);
-        const personalizavelLabel = isPersonalizavel ? ` - (${maxSabores} SABORES)` : '';
-
-        const div = document.createElement('div');
-        div.classList.add('item-gerenciar');
-        div.dataset.nome = nome;
-
-        div.innerHTML = `
-            <span>[${categoriaLabel}] ${nome}${personalizavelLabel} (R$ ${parseFloat(preco).toFixed(2).replace('.', ',')})</span>
-            <button class="item-gerenciar-remover-btn" data-item="${nome}">Remover</button>
-        `;
-        listaContainer.appendChild(div);
-    });
-}
-
-function renderizarListaSaboresGerenciamento() {
-    const listaContainer = document.getElementById('lista-sabores-atuais');
-    listaContainer.innerHTML = '';
-    
-    if (listaSaboresDisponiveis.length === 0) {
-        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum sabor cadastrado. Adicione um acima.</p>';
-        return;
-    }
-
-    listaSaboresDisponiveis.forEach(sabor => {
-        const div = document.createElement('div');
-        div.classList.add('sabor-item');
-        div.dataset.sabor = sabor;
-        
-        div.innerHTML = `
-            <span>${sabor}</span>
-            <button class="remover-sabor-btn" data-sabor="${sabor}">X</button>
-        `;
-        listaContainer.appendChild(div);
-    });
-}
-
-function renderizarListaComplementosGerenciamento() {
-    const listaContainer = document.getElementById('lista-complementos-atuais');
-    listaContainer.innerHTML = '';
-    
-    if (listaComplementosDisponiveis.length === 0) {
-        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum complemento cadastrado. Adicione um acima.</p>';
-        return;
-    }
-
-    listaComplementosDisponiveis.forEach(complemento => {
-        const div = document.createElement('div');
-        div.classList.add('sabor-item'); 
-        div.dataset.complemento = complemento;
-        
-        div.innerHTML = `
-            <span>${complemento}</span>
-            <button class="remover-complemento-btn" data-complemento="${complemento}">X</button>
-        `;
-        listaContainer.appendChild(div);
-    });
-}
-
-function renderizarListaLocalidadesGerenciamento() {
-    const listaContainer = document.getElementById('lista-localidades-atuais');
-    listaContainer.innerHTML = '';
-    
-    if (listaLocalidadesDisponiveis.length === 0) {
-        listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhuma localidade cadastrada. Adicione uma acima.</p>';
-        return;
-    }
-
-    listaLocalidadesDisponiveis.forEach(localidade => {
-        const div = document.createElement('div');
-        div.classList.add('item-gerenciar'); 
-        div.dataset.id = localidade.id;
-        
-        div.innerHTML = `
-            <span>${localidade.nome} (Taxa: R$ ${localidade.taxa.toFixed(2).replace('.', ',')})</span>
-            <button class="remover-localidade-btn" data-id="${localidade.id}">Remover</button>
-        `;
-        listaContainer.appendChild(div);
-    });
 }
 
 // ====================================================================
@@ -603,7 +862,6 @@ function popularLocalidadesNoCheckout() {
         option.value = localidade.nome;
         option.textContent = `${localidade.nome} (R$ ${localidade.taxa.toFixed(2).replace('.', ',')})`;
         option.dataset.taxa = localidade.taxa;
-        // Adiciona o ID do Firestore como um data attribute para uso futuro, se necessário
         if (localidade.id) {
              option.dataset.docId = localidade.id;
         }
@@ -685,7 +943,7 @@ function validarFormularioPedido() {
         return false;
     }
 
-    if (pagamento === 'dinheiro' && valorPago < total) {
+    if (pagamento === 'dinheiro' && total > 0 && valorPago < total) {
         alert("O valor fornecido para troco deve ser igual ou superior ao Total do Pedido (incluindo taxa de entrega).");
         return false;
     }
