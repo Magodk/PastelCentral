@@ -1,44 +1,24 @@
-// Objeto para armazenar o carrinho: { nome_item: [ {preco: X, sabores: [...] } ] }
+// Variáveis Globais de Controle e Firebase (Definidas no index.html)
 let carrinho = {};
+let dadosCliente = { nome: '', whatsapp: '', email: '' }; 
+let detalhesTransacao = { rua: '', numero: '', referencia: '', pagamento: '', trocoPara: 0 };
 
-// Dados do Cliente (Preenchidos no Modal de Entrada)
-let dadosCliente = {
-    nome: '',
-    whatsapp: '',
-    email: '' 
-}; 
-
-// Dados de Transação
-let detalhesTransacao = {
-    rua: '',
-    numero: '',
-    referencia: '',
-    pagamento: '',
-    trocoPara: 0
-};
-
-// Variáveis de Controle
 let acessoGerenciamentoLiberado = false;
 let itemPersonalizavelAtual = null; 
 let maxSaboresPermitidos = 0; 
 let saboresSelecionados = [];
-
-// Variáveis para o fluxo de Complementos
 let complementosSelecionados = []; 
-let itemPersonalizadoFinal = {}; // Para guardar o estado do item após sabores
+let itemPersonalizadoFinal = {}; 
+let produtosCardapioCache = []; // Cache local para os produtos carregados
 
 // Credenciais de Controle
 const NOME_ADMIN = "zeze"; 
 const ADMIN_UID_PRINCIPAL = "oWClbuRYhgg3T2G0D6TahYlIB242"; // UID fornecido
 
+// LISTAS GLOBAIS DE OPÇÕES (Agora populadas pelo Firestore)
+let listaSaboresDisponiveis = []; // Será carregada do Firestore
 
-// LISTAS GLOBAIS DE OPÇÕES
-let listaSaboresDisponiveis = [
-    "Carne", "Frango", "Camarão", "Charque", "4 Queijos", "Pizza", "Palmito", "Calabresa",
-    "Chocolate", "Doce de Leite", "Goiabada", "Banana com Canela"
-];
-
-const listaComplementosDisponiveis = [
+const listaComplementosDisponiveis = [ // Itens fixos por simplicidade
     { nome: "Extra Queijo", preco: 2.00 },
     { nome: "Borda Recheada (Catupiry)", preco: 5.00 },
     { nome: "Pimenta Extra", preco: 0.00 },
@@ -47,14 +27,11 @@ const listaComplementosDisponiveis = [
 
 
 // ------------------------------------------------------------------
-// AUTENTICAÇÃO COM FIREBASE
+// AUTENTICAÇÃO COM FIREBASE (MANTIDA)
 // ------------------------------------------------------------------
 
 /**
  * Tenta fazer login com as credenciais fornecidas usando o Firebase Auth.
- * @param {string} email 
- * @param {string} senha 
- * @returns {boolean}
  */
 async function loginAdminComFirebase(email, senha) {
     if (typeof firebase === 'undefined' || !firebase.auth) {
@@ -66,19 +43,15 @@ async function loginAdminComFirebase(email, senha) {
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, senha);
         const user = userCredential.user;
         
-        // Verifica se o UID do usuário logado é o UID principal
         if (user.uid === ADMIN_UID_PRINCIPAL) {
             console.log("Login Admin Firebase: SUCESSO!", user.uid);
             return true;
         } else {
-            // Se o login for válido, mas o UID não for o Admin principal
             await firebase.auth().signOut(); 
             alert("Acesso negado: Este usuário não é o administrador principal.");
-            console.warn("Login bem-sucedido, mas o UID não corresponde ao Admin principal.");
             return false;
         }
     } catch (error) {
-        // Exibe erro genérico para segurança, enquanto registra o erro no console
         alert("Erro de login Admin: Credenciais inválidas ou conta não existe.");
         console.error("Login Admin Firebase: Erro de autenticação:", error.code, error.message);
         return false;
@@ -95,6 +68,80 @@ function finalizarAutenticacao() {
 
 
 // ------------------------------------------------------------------
+// INTEGRAÇÃO COM FIREBASE FIRESTORE (NOVAS FUNÇÕES)
+// ------------------------------------------------------------------
+
+/**
+ * Carrega a lista de produtos da coleção 'produtos' no Firestore.
+ */
+async function carregarCardapio() {
+    // Limpa a visualização e o cache
+    document.querySelectorAll('.categoria-section').forEach(section => {
+        const itens = section.querySelectorAll('.item-card');
+        itens.forEach(item => item.remove());
+    });
+    produtosCardapioCache = [];
+    
+    try {
+        const produtosRef = db.collection('produtos');
+        const snapshot = await produtosRef.get();
+        
+        if (snapshot.empty) {
+            console.log("Nenhum produto encontrado no Firestore.");
+            // Adiciona um aviso se a lista estiver vazia (apenas para o cliente ver)
+             document.getElementById('categoria-pastel').innerHTML += '<p class="aviso-gerenciamento">Nenhum item cadastrado no cardápio.</p>';
+            return;
+        }
+        
+        snapshot.forEach(doc => {
+            const produto = { id: doc.id, ...doc.data() };
+            produtosCardapioCache.push(produto);
+            
+            // Renderiza o item no cardápio
+            const categoriaSection = document.getElementById(`categoria-${produto.categoria}`);
+            if (categoriaSection) {
+                const novoItemCard = criarItemCardHTML(
+                    produto.nome, 
+                    produto.descricao, 
+                    produto.preco, 
+                    produto.categoria, 
+                    produto.personalizavel === 'sim', 
+                    produto.maxSabores, 
+                    produto.id 
+                );
+                categoriaSection.appendChild(novoItemCard);
+                atualizarQuantidadeDisplay(produto.nome); 
+            }
+        });
+    } catch (error) {
+        console.error("Erro ao carregar o cardápio do Firestore:", error);
+        alert("Erro ao carregar o cardápio. Verifique a conexão com o Firebase.");
+    }
+}
+
+/**
+ * Carrega a lista de sabores do documento 'sabores' no Firestore.
+ */
+async function carregarSabores() {
+    try {
+        const doc = await db.collection('configuracoes').doc('sabores').get();
+        
+        if (doc.exists && doc.data().lista) {
+            listaSaboresDisponiveis = doc.data().lista.sort();
+            console.log("Sabores carregados:", listaSaboresDisponiveis.length);
+        } else {
+             // Cria o documento inicial se não existir
+            await db.collection('configuracoes').doc('sabores').set({ lista: listaSaboresDisponiveis });
+            console.log("Documento de sabores inicializado no Firestore.");
+        }
+        
+    } catch (error) {
+        console.error("Erro ao carregar os sabores do Firestore:", error);
+    }
+}
+
+
+// ------------------------------------------------------------------
 // LÓGICA DO CARDÁPIO, CARRINHO E FINALIZAÇÃO
 // ------------------------------------------------------------------
 
@@ -105,42 +152,6 @@ const phoneMask = (value) => {
     value = value.replace(/(\d{2})(\d)/, "($1) $2");
     value = value.replace(/(\d{5})(\d{4})$/, "$1-$2");
     return value;
-}
-
-async function carregarCardapioDaAPI() {
-    document.querySelectorAll('.categoria-section').forEach(section => {
-        const itens = section.querySelectorAll('.item-card');
-        itens.forEach(item => item.remove());
-    });
-
-    // Produtos Iniciais (Hardcoded por enquanto, pode ser substituído pelo Firestore)
-    const produtosIniciais = [
-         { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!", },
-         { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido.", },
-         { nome: "Mini Coxinha de Frango (12 un.)", preco: "15.00", categoria: "coxinha", personalizavel: "nao", descricao: "Porção com 12 mini coxinhas crocantes de frango.", },
-         { nome: "Pastel de Chocolate c/ Morango", preco: "12.00", categoria: "doces", personalizavel: "nao", descricao: "Chocolate cremoso e morangos frescos, uma combinação perfeita.", },
-         { nome: "Coca-Cola Lata 350ml", preco: "6.00", categoria: "bebidas", personalizavel: "nao", descricao: "Aquele clássico que refresca a qualquer hora.", },
-    ];
-
-    produtosIniciais.forEach(produto => {
-        const categoriaSection = document.getElementById(`categoria-${produto.categoria}`);
-        if (categoriaSection) {
-            const isPersonalizavel = produto.personalizavel === 'sim';
-            const maxSabores = produto.maxSabores || 0;
-            
-            const novoItemCard = criarItemCardHTML(
-                produto.nome, 
-                produto.descricao, 
-                produto.preco, 
-                produto.categoria, 
-                isPersonalizavel, 
-                maxSabores, 
-                produto.id 
-            );
-            categoriaSection.appendChild(novoItemCard);
-            atualizarQuantidadeDisplay(produto.nome); 
-        }
-    });
 }
 
 function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, maxSabores = 0, id = null) {
@@ -185,6 +196,9 @@ function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, 
     return card;
 }
 
+/**
+ * Adiciona um produto ao Firestore e recarrega o cardápio.
+ */
 async function adicionarProdutoAoCardapio(event) {
     event.preventDefault();
 
@@ -192,74 +206,97 @@ async function adicionarProdutoAoCardapio(event) {
     const categoria = document.getElementById('categoria-produto').value;
     const nome = document.getElementById('nome-produto').value.trim();
     const isPersonalizavel = document.getElementById('is-personalizavel').checked; 
-    const maxSabores = document.getElementById('max-sabores').value; 
+    const maxSabores = isPersonalizavel ? parseInt(document.getElementById('max-sabores').value) : 0; 
     const descricao = document.getElementById('descricao-produto').value.trim();
-    const preco = document.getElementById('preco-produto').value;
+    const preco = parseFloat(document.getElementById('preco-produto').value);
 
-    if (!categoria || !nome || !descricao || isNaN(parseFloat(preco)) || parseFloat(preco) <= 0) {
+    if (!categoria || !nome || !descricao || isNaN(preco) || preco <= 0) {
         alert('Por favor, preencha todos os campos obrigatórios corretamente.');
         return;
     }
     
-    if (isPersonalizavel && (parseInt(maxSabores) < 1 || isNaN(parseInt(maxSabores)))) {
+    if (isPersonalizavel && (maxSabores < 1 || isNaN(maxSabores))) {
         alert('Se o produto for personalizável, o máximo de sabores a escolher deve ser 1 ou mais.');
         return;
     }
     
-    const nomeExistente = Array.from(document.querySelectorAll('.item-card')).some(item => 
-        item.dataset.nome.toLowerCase() === nome.toLowerCase()
+    const nomeExistente = produtosCardapioCache.some(item => 
+        item.nome.toLowerCase() === nome.toLowerCase()
     );
     if (nomeExistente) {
-        alert(`O produto "${nome}" já existe no cardápio. Por favor, use um nome diferente.`);
+        alert(`O produto "${nome}" já existe no cardápio.`);
         return;
     }
 
-    const categoriaSection = document.getElementById(`categoria-${categoria}`);
-    if (categoriaSection) {
-        const novoItemCard = criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, maxSabores); 
-        categoriaSection.appendChild(novoItemCard);
-        atualizarQuantidadeDisplay(nome); 
-    }
+    try {
+        const novoProduto = {
+            nome: nome,
+            descricao: descricao,
+            preco: preco.toFixed(2), 
+            categoria: categoria,
+            personalizavel: isPersonalizavel ? 'sim' : 'nao',
+            maxSabores: maxSabores,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp() 
+        };
+        
+        await db.collection('produtos').add(novoProduto);
+        
+        form.reset();
+        document.getElementById('max-sabores-group').style.display = 'none'; 
+        alert(`Produto "${nome}" adicionado com sucesso e salvo no banco de dados!`);
+        
+        // Recarrega o cardápio e a lista de gerenciamento
+        await carregarCardapio();
+        alternarAbas('cardapio');
 
-    form.reset();
-    document.getElementById('max-sabores-group').style.display = 'none'; 
-    alert(`Produto "${nome}" adicionado com sucesso (localmente)!`);
-    alternarAbas('cardapio');
+    } catch (error) {
+        console.error("Erro ao adicionar produto:", error);
+        alert("Falha ao salvar o produto. Tente novamente.");
+    }
 }
 
+/**
+ * Remove um produto do Firestore e do cardápio.
+ */
 async function removerProdutoDoCardapio(itemNome) {
-    const itemCard = document.querySelector(`.menu-container .item-card[data-nome="${itemNome}"]`);
-    if (!itemCard) return;
+    const produto = produtosCardapioCache.find(p => p.nome === itemNome);
+    if (!produto || !produto.id) return;
 
-    itemCard.remove();
-    
-    if (carrinho[itemNome]) {
-        delete carrinho[itemNome];
+    try {
+        await db.collection('produtos').doc(produto.id).delete();
+
+        // Limpa o carrinho para este item
+        if (carrinho[itemNome]) { delete carrinho[itemNome]; }
+
+        alert(`Produto "${itemNome}" removido permanentemente.`);
+        
+        // Recarrega o cardápio e a lista de gerenciamento
+        await carregarCardapio();
         atualizarTotalItensBotao();
         renderizarCarrinhoModal();
-    }
+        renderizarListaGerenciamento();
 
-    alert(`Produto "${itemNome}" removido (temporariamente).`);
-    renderizarListaGerenciamento();
+    } catch (error) {
+        console.error("Erro ao remover produto:", error);
+        alert("Falha ao remover o produto. Tente novamente.");
+    }
 }
 
 function renderizarListaGerenciamento() {
     const listaContainer = document.getElementById('lista-produtos-gerenciar');
     listaContainer.innerHTML = ''; 
 
-    const itensCardapio = document.querySelectorAll('.menu-container .item-card');
-    
-    if (itensCardapio.length === 0) {
+    if (produtosCardapioCache.length === 0) {
         listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum produto cadastrado no cardápio.</p>';
         return;
     }
 
-    itensCardapio.forEach(item => {
-        const nome = item.dataset.nome;
-        const preco = item.dataset.preco;
-        const categoria = item.dataset.categoria;
-        const isPersonalizavel = item.dataset.personalizavel === 'sim'; 
-        const maxSabores = item.dataset.maxSabores || 0;
+    produtosCardapioCache.forEach(produto => {
+        const nome = produto.nome;
+        const preco = produto.preco;
+        const categoria = produto.categoria;
+        const isPersonalizavel = produto.personalizavel === 'sim'; 
+        const maxSabores = produto.maxSabores || 0;
         
         const categoriaLabel = categoria.charAt(0).toUpperCase() + categoria.slice(1);
         const personalizavelLabel = isPersonalizavel ? ` - (${maxSabores} SABORES)` : '';
@@ -276,7 +313,10 @@ function renderizarListaGerenciamento() {
     });
 }
 
-function adicionarSabor(event) {
+/**
+ * Adiciona um sabor e salva a lista atualizada no Firestore.
+ */
+async function adicionarSabor(event) {
     event.preventDefault();
     const input = document.getElementById('novo-sabor-input');
     let novoSabor = input.value.trim();
@@ -287,21 +327,48 @@ function adicionarSabor(event) {
         if (!listaSaboresDisponiveis.includes(novoSabor)) {
             listaSaboresDisponiveis.push(novoSabor);
             listaSaboresDisponiveis.sort(); 
-            renderizarListaSaboresGerenciamento();
-            input.value = '';
-            alert(`Sabor "${novoSabor}" adicionado temporariamente.`);
+            
+            try {
+                // Salva a lista completa e atualizada no Firestore
+                await db.collection('configuracoes').doc('sabores').update({ lista: listaSaboresDisponiveis });
+                
+                renderizarListaSaboresGerenciamento();
+                input.value = '';
+                alert(`Sabor "${novoSabor}" adicionado e salvo permanentemente!`);
+
+            } catch (error) {
+                console.error("Erro ao adicionar sabor:", error);
+                alert("Falha ao salvar o sabor no banco de dados.");
+                // Se falhar, reverte localmente (opcional, mas bom)
+                listaSaboresDisponiveis.splice(listaSaboresDisponiveis.indexOf(novoSabor), 1);
+            }
         } else {
             alert(`O sabor "${novoSabor}" já existe na lista.`);
         }
     }
 }
 
-function removerSabor(sabor) {
+/**
+ * Remove um sabor e salva a lista atualizada no Firestore.
+ */
+async function removerSabor(sabor) {
     const index = listaSaboresDisponiveis.indexOf(sabor);
     if (index > -1) {
         listaSaboresDisponiveis.splice(index, 1);
-        renderizarListaSaboresGerenciamento();
-        alert(`Sabor "${sabor}" removido temporariamente.`);
+        
+        try {
+            // Salva a lista completa e atualizada no Firestore
+            await db.collection('configuracoes').doc('sabores').update({ lista: listaSaboresDisponiveis });
+            
+            renderizarListaSaboresGerenciamento();
+            alert(`Sabor "${sabor}" removido permanentemente.`);
+        } catch (error) {
+            console.error("Erro ao remover sabor:", error);
+            alert("Falha ao remover o sabor do banco de dados.");
+            // Reverte localmente
+            listaSaboresDisponiveis.push(sabor);
+            listaSaboresDisponiveis.sort();
+        }
     }
 }
 
@@ -328,7 +395,7 @@ function renderizarListaSaboresGerenciamento() {
 }
 
 
-// Funções de Carrinho e Checkout
+// Funções de Carrinho e Checkout (Mantidas)
 function atualizarQuantidadeDisplay(itemNome) { 
     const qtySpan = document.getElementById(`qty-${itemNome}`);
     if (qtySpan) {
@@ -351,12 +418,11 @@ function gerenciarCarrinho(itemNome, acao, itemPersonalizado = null) {
     if (!itemElement) { return; }
     
     const isPersonalizavel = itemElement.dataset.personalizavel === 'sim';
-    const itemPreco = parseFloat(itemElement.dataset.preco); // Preço base do cardápio
+    const itemPreco = parseFloat(itemElement.dataset.preco);
 
     if (isPersonalizavel) {
-        // Se for personalizado, o itemPersonalizado já contém o preço ajustado (base + complementos)
         if (acao === 'adicionar' && itemPersonalizado) {
-            carrinho[itemNome].push(itemPersonalizado); // Adiciona o objeto completo (preco, sabores, complementos)
+            carrinho[itemNome].push(itemPersonalizado);
         } else if (acao === 'remover' && carrinho[itemNome].length > 0) {
             carrinho[itemNome].pop();
         }
@@ -389,7 +455,6 @@ function removerItemDoCarrinho(itemNome) {
 function calcularTotal() {
     let total = 0;
     for (const itemNome in carrinho) {
-        // O preço do item já inclui os complementos, se existirem
         total += carrinho[itemNome].reduce((sum, item) => sum + item.preco, 0); 
     }
     return total;
@@ -429,14 +494,12 @@ function renderizarCarrinhoModal() {
             const itensDoTipo = carrinho[itemNome];
             const quantidade = itensDoTipo.length;
             
-            // Subtotal é a soma dos preços de todas as unidades, já ajustadas com complementos
             const subtotal = itensDoTipo.reduce((sum, item) => sum + item.preco, 0);
             
             let detalhesItem = ''; 
             const isPersonalizavelItem = itensDoTipo.every(item => item.sabores !== undefined);
 
             if (isPersonalizavelItem || itensDoTipo.some(item => item.complementos !== undefined)) {
-                // Mapeia e junta os detalhes (sabores e complementos) de cada unidade
                 detalhesItem = itensDoTipo.map((item, index) => {
                     const sabores = item.sabores ? item.sabores.join(', ') : '';
                     const complementos = item.complementos && item.complementos.length > 0 ? ` | Extras: ${item.complementos.join(', ')}` : '';
@@ -568,7 +631,6 @@ function enviarPedidoWhatsApp(event) {
         
         mensagem += `  > *${quantidade}x ${itemNome}* \n`;
 
-        // Verifica se é um item personalizado (que passou pelos modais)
         const isPersonalizavel = itensDoTipo[0].sabores !== undefined || itensDoTipo[0].complementos !== undefined;
         
         if (isPersonalizavel) {
@@ -590,16 +652,17 @@ function enviarPedidoWhatsApp(event) {
 
     window.open(linkWhatsapp, '_blank');
 
+    // Resetar o carrinho e a interface
     carrinho = {};
     document.getElementById('modal-carrinho').style.display = 'none';
-    carregarCardapioDaAPI().then(() => { 
+    carregarCardapio().then(() => { 
         atualizarTotalItensBotao();
     });
 }
 
 
 // ------------------------------------------------------------------
-// LÓGICA DE SABORES
+// LÓGICA DE MODAIS (SABORES E COMPLEMENTOS - MANTIDA)
 // ------------------------------------------------------------------
 
 function openSaboresModal(itemNome, maxSabores) {
@@ -616,13 +679,19 @@ function openSaboresModal(itemNome, maxSabores) {
     itemPersonalizadoFinal = {}; 
 
     opcoesContainer.innerHTML = '';
-    listaSaboresDisponiveis.sort().forEach(sabor => {
-        const div = document.createElement('div');
-        div.classList.add('sabor-item');
-        div.dataset.sabor = sabor;
-        div.textContent = sabor;
-        opcoesContainer.appendChild(div);
-    });
+    
+    if(listaSaboresDisponiveis.length === 0) {
+         opcoesContainer.innerHTML = '<p class="aviso-gerenciamento" style="flex-basis: 100%;">Nenhum sabor cadastrado. Avise o Administrador.</p>';
+         btnConfirmar.disabled = true;
+    } else {
+        listaSaboresDisponiveis.forEach(sabor => {
+            const div = document.createElement('div');
+            div.classList.add('sabor-item');
+            div.dataset.sabor = sabor;
+            div.textContent = sabor;
+            opcoesContainer.appendChild(div);
+        });
+    }
     
     titulo.textContent = `Escolha seus Sabores para "${itemNome}"`;
     info.textContent = `Selecione exatamente ${maxSabores} sabores.`;
@@ -669,25 +738,17 @@ function confirmarSabores() {
     const itemElement = document.querySelector(`[data-nome="${itemPersonalizavelAtual}"]`);
     const itemPreco = parseFloat(itemElement.dataset.preco);
     
-    // 1. Salva o item temporariamente antes de ir para complementos
     itemPersonalizadoFinal = {
         nome: itemPersonalizavelAtual,
         preco: itemPreco, 
         sabores: [...saboresSelecionados],
-        complementos: [] // Inicializa
+        complementos: []
     };
     
-    // 2. Fecha o modal de sabores
     document.getElementById('modal-sabores').style.display = 'none';
-    
-    // 3. Abre o novo modal de complementos
     openComplementosModal(itemPersonalizavelAtual);
 }
 
-
-// ------------------------------------------------------------------
-// LÓGICA DE COMPLEMENTOS (AGORA INTEGRADA)
-// ------------------------------------------------------------------
 
 function atualizarPrecoExtraComplementos() {
     let totalExtra = complementosSelecionados.reduce((sum, comp) => sum + comp.preco, 0);
@@ -731,11 +792,9 @@ function handleComplementoClick(event) {
     const index = complementosSelecionados.findIndex(c => c.nome === nome);
     
     if (index > -1) {
-        // Remover
         complementosSelecionados.splice(index, 1);
         compElement.classList.remove('selected');
     } else {
-        // Adicionar
         complementosSelecionados.push({ nome, preco });
         compElement.classList.add('selected');
     }
@@ -747,26 +806,19 @@ function confirmarComplementos() {
     if (!itemPersonalizadoFinal.nome) return;
 
     const precoComplementos = complementosSelecionados.reduce((sum, comp) => sum + comp.preco, 0);
-    
-    // Preço final do item = Preço base + Preço dos complementos
     const precoFinal = itemPersonalizadoFinal.preco + precoComplementos;
 
-    // Atualiza o objeto final com complementos e preço final
     itemPersonalizadoFinal.complementos = complementosSelecionados.map(c => c.nome);
     itemPersonalizadoFinal.preco = precoFinal; 
     
-    // Adiciona ao carrinho
     gerenciarCarrinho(itemPersonalizadoFinal.nome, 'adicionar', itemPersonalizadoFinal);
 
-    // Limpa variáveis de estado e fecha modal
     itemPersonalizadoFinal = {};
     complementosSelecionados = [];
     document.getElementById('modal-complementos').style.display = 'none';
 }
 
-// ------------------------------------------------------------------
-// Lógica de Alternância de Abas 
-// ------------------------------------------------------------------
+// Lógica de Alternância de Abas (Mantida)
 function alternarAbas(abaAtivaId) {
     const cardapio = document.querySelector('.menu-container');
     const gerenciamento = document.getElementById('gerenciamento');
@@ -796,27 +848,17 @@ function alternarAbas(abaAtivaId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ... (Inicialização dos Elementos do DOM) ...
     const modalEntrada = document.getElementById('modal-entrada');
-    
-    // Formulários
     const formAcessoRapido = document.getElementById('form-acesso-rapido'); 
     const formLoginAdmin = document.getElementById('form-login-admin'); 
-
-    // Inputs de Cliente
     const inputAcessoRapidoNome = document.getElementById('acesso-rapido-nome');
     const inputAcessoRapidoWhatsapp = document.getElementById('acesso-rapido-whatsapp');
-    
-    // Inputs de Admin
     const inputAdminEmail = document.getElementById('admin-email');
-    const inputTelaCliente = document.getElementById('Tela-cliente'); // Campo de Senha
-    
-    // Elementos de Controle
+    const inputTelaCliente = document.getElementById('Tela-cliente');
     const btnGerenciamento = document.getElementById('tab-gerenciamento'); 
     const btnCardapio = document.getElementById('tab-cardapio'); 
     const separatorAuth = document.querySelector('.separator-auth');
-
-
-    // Demais Elementos de Modais
     const modal = document.getElementById('modal-carrinho');
     const modalSabores = document.getElementById('modal-sabores');
     const modalComplementos = document.getElementById('modal-complementos'); 
@@ -834,9 +876,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirmarComplementos = document.getElementById('confirmar-complementos-btn'); 
     const formAdicionarProduto = document.getElementById('adicionar-produto-form');
     const formAdicionarSabor = document.getElementById('adicionar-sabor-form');
+    // ... (Fim da Inicialização dos Elementos do DOM) ...
 
-
-    // Inicializa bloqueando o scroll
     document.body.classList.add('no-scroll'); 
 
     // --- 1. Lógica de Input e Detecção do Admin ---
@@ -844,22 +885,16 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = phoneMask(e.target.value);
     });
     
-
     inputAcessoRapidoNome.addEventListener('input', (e) => {
         const nomeDigitado = e.target.value.trim().toLowerCase();
         
         if (nomeDigitado === NOME_ADMIN) {
-            // MODO ADMIN: Esconde cliente e mostra admin
             formAcessoRapido.style.display = 'none';
             if (separatorAuth) separatorAuth.style.display = 'none';
             formLoginAdmin.style.display = 'block';
-            
-            // Define o email do Admin para o que está no Firebase
             inputAdminEmail.value = "admin@dominio.com"; 
             inputTelaCliente.focus();
-
         } else if (formLoginAdmin.style.display === 'block') {
-            // Volta para o modo cliente se o nome for apagado
             formLoginAdmin.style.display = 'none';
             formAcessoRapido.style.display = 'block';
             if (separatorAuth) separatorAuth.style.display = 'none';
@@ -878,7 +913,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Coleta de Dados do Cliente
         dadosCliente.nome = nomeCliente;
         dadosCliente.whatsapp = inputAcessoRapidoWhatsapp.value;
         dadosCliente.email = 'N/A - Cliente'; 
@@ -897,8 +931,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (sucessoLogin) {
             acessoGerenciamentoLiberado = true;
-            
-            // Ativa o botão de Gerenciamento
             btnGerenciamento.style.display = 'block'; 
             btnCardapio.style.flexGrow = 0.5;
             btnGerenciamento.style.flexGrow = 0.5;
@@ -909,8 +941,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Bem-vindo(a), Administrador! Acesso de gerenciamento liberado.`);
             
             finalizarAutenticacao();
-        } else {
-             // O erro já é alertado dentro da função loginAdminComFirebase
         } 
     });
 
@@ -928,7 +958,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 openSaboresModal(itemNome, maxSabores);
             } 
             else if (target.classList.contains('adicionar')) {
-                // Itens simples vão direto para o carrinho
                 gerenciarCarrinho(itemNome, 'adicionar');
             } 
             else if (target.classList.contains('remover')) {
@@ -982,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lógica do Modal de Seleção de Complementos
     closeComplementos.onclick = () => { 
         modalComplementos.style.display = 'none'; 
-        itemPersonalizadoFinal = {}; // Limpar se o usuário fechar
+        itemPersonalizadoFinal = {};
         complementosSelecionados = [];
     };
     complementosOpcoes.addEventListener('click', handleComplementoClick);
@@ -1030,8 +1059,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Inicialização
-    carregarCardapioDaAPI().then(() => {
-        atualizarTotalItensBotao();
-    });
+    // Inicialização do Firebase e Carregamento de Dados
+    if (typeof db !== 'undefined') {
+        carregarSabores().then(() => {
+             carregarCardapio();
+        });
+    } else {
+        alert("Erro fatal: Firestore não inicializado. Verifique a configuração no index.html.");
+    }
 });
