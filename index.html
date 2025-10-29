@@ -38,11 +38,6 @@
                         >
                     </div>
 
-                    <div class="form-group">
-                        <label for="acesso-rapido-email">Email (Opcional):</label>
-                        <input type="email" id="acesso-rapido-email" placeholder="seu-email@dominio.com">
-                    </div>
-
                     <button type="submit" class="btn-primary">Entrar e Pedir</button>
                 </form>
                 
@@ -170,6 +165,48 @@
             </div>
         </div>
         
+        <div class="gerenciamento-section">
+            <h3 class="lista-titulo">Gerenciar Complementos/Toppings</h3>
+            <div id="gerenciamento-complementos-container">
+                <form id="adicionar-complemento-form" class="sabor-form">
+                    <div class="form-group">
+                        <label for="novo-complemento-input">Adicionar Novo Complemento:</label>
+                        <input type="text" id="novo-complemento-input" placeholder="Ex: Catupiry, Cheddar, Bacon" required>
+                    </div>
+                    <button type="submit" id="btn-adicionar-complemento" class="btn-primary" style="background-color: var(--cor-destaque);">Adicionar Complemento</button>
+                </form>
+
+                <h4 class="sabores-lista-titulo">Complementos Atuais:</h4>
+                <div id="lista-complementos-atuais" class="sabores-opcoes-grid">
+                    <p class="aviso-gerenciamento">Carregando complementos...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="gerenciamento-section">
+            <h3 class="lista-titulo">Gerenciar Localidades e Taxas de Delivery</h3>
+            <div id="gerenciamento-localidades-container">
+                <form id="adicionar-localidade-form" class="sabor-form">
+                    <div class="form-group-inline" style="gap: 10px;">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="novo-localidade-input">Bairro/Localidade:</label>
+                            <input type="text" id="novo-localidade-input" placeholder="Ex: Centro" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="taxa-localidade-input">Taxa (R$):</label>
+                            <input type="number" id="taxa-localidade-input" step="0.01" min="0" placeholder="Ex: 8.00" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-adicionar-localidade" class="btn-primary" style="background-color: var(--cor-principal);">Adicionar Localidade</button>
+                </form>
+
+                <h4 class="sabores-lista-titulo">Localidades Atuais:</h4>
+                <div id="lista-localidades-atuais">
+                    <p class="aviso-gerenciamento">Carregando localidades...</p>
+                </div>
+            </div>
+        </div>
+        
     </section>
 
     <div id="carrinho-flutuante">
@@ -191,18 +228,41 @@
                 <h4>Detalhes da Entrega</h4>
                 
                 <div class="form-group">
-                    <label for="input-rua">Rua/Avenida:</label>
-                    <input type="text" id="input-rua" required>
+                    <label for="select-tipo-entrega">Tipo de Entrega:</label>
+                    <select id="select-tipo-entrega" required>
+                        <option value="" disabled selected>Selecione o Tipo de Entrega</option>
+                        <option value="retirada">Retirada no Local</option>
+                        <option value="delivery">Delivery</option>
+                    </select>
                 </div>
-                <div class="form-group-inline">
+                
+                <div id="delivery-group" style="display: none;">
+                    
                     <div class="form-group">
-                        <label for="input-numero">Nº:</label>
-                        <input type="text" id="input-numero" required>
+                        <label for="select-localidade">Bairro/Localidade:</label>
+                        <select id="select-localidade">
+                            <option value="" data-taxa="0" disabled selected>Selecione seu Bairro</option>
+                        </select>
+                        <p class="aviso-troco" id="aviso-taxa">Taxa de entrega: R$ 0,00</p>
                     </div>
-                    <div class="form-group">
-                        <label for="input-referencia">Referência/Apto:</label>
-                        <input type="text" id="input-referencia" placeholder="Ex: Ao lado do mercado">
+
+                    <div id="endereco-group">
+                        <div class="form-group">
+                            <label for="input-rua">Rua/Avenida:</label>
+                            <input type="text" id="input-rua">
+                        </div>
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="input-numero">Nº:</label>
+                                <input type="text" id="input-numero">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-referencia">Referência/Apto:</label>
+                                <input type="text" id="input-referencia" placeholder="Ex: Ao lado do mercado">
+                            </div>
+                        </div>
                     </div>
+
                 </div>
 
                 <h4>Forma de Pagamento</h4>
@@ -224,7 +284,7 @@
                 <button type="submit" id="finalizar-pedido-btn-form" class="btn-primary" disabled>Enviar Pedido via WhatsApp</button>
             </form>
 
-            <p class="aviso-whatsapp-rodape">Atenção: A loja confirmará a taxa de entrega e o tempo de envio.</p>
+            <p class="aviso-whatsapp-rodape">Atenção: O total inclui a taxa de entrega, se aplicável. A loja confirmará o tempo de envio.</p>
         </div>
     </div>
     
@@ -239,10 +299,24 @@
             
             <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
             
-            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Próxima Etapa (Complementos)</button>
         </div>
     </div>
 
+    <div id="modal-complementos" class="modal" style="z-index: 1003;">
+        <div class="modal-conteudo">
+            <span class="fechar-modal fechar-complementos">&times;</span>
+            <h3 id="complementos-modal-titulo">Adicionar Complementos</h3>
+            <p id="complementos-modal-info" class="modal-info-text">Selecione os complementos opcionais para o seu pastel (escolha quantos quiser).</p>
+
+            <div id="complementos-opcoes" class="sabores-opcoes-grid">
+                </div>
+            
+            <p id="complementos-contador" class="contador-text">Complementos escolhidos: <span id="complementos-count">0</span></p>
+            
+            <button id="confirmar-complementos-btn" class="btn-primary">Adicionar ao Carrinho</button>
+        </div>
+    </div>
     <footer>
         &copy; 2025 Pastel Central. Todos os direitos reservados.
     </footer>

@@ -628,7 +628,7 @@ header p {
 
 
 /* ================================================= */
-/* ESTILOS PARA GERENCIAMENTO DE SABORES */
+/* ESTILOS PARA GERENCIAMENTO DE SABORES/COMPLEMENTOS */
 /* ================================================= */
 
 .sabor-form {
@@ -665,11 +665,17 @@ header p {
 }
 
 /* Reutiliza o estilo do grid de sabores do modal */
-#lista-sabores-atuais {
+#lista-sabores-atuais, #lista-complementos-atuais {
     border: 1px solid var(--cor-borda);
     padding: 15px;
     background-color: var(--cor-cinza-claro);
     border-radius: 8px;
+}
+
+#lista-localidades-atuais {
+     display: flex;
+    flex-direction: column;
+    gap: 15px; 
 }
 
 .sabor-item {
@@ -687,7 +693,8 @@ header p {
     cursor: default; 
 }
 
-.sabor-item .remover-sabor-btn {
+.sabor-item .remover-sabor-btn,
+.sabor-item .remover-complemento-btn {
     position: absolute;
     top: 50%;
     right: 5px;
@@ -710,11 +717,12 @@ header p {
     box-shadow: var(--sombra-leve);
 }
 
-.sabor-item .remover-sabor-btn:hover {
+.sabor-item .remover-sabor-btn:hover,
+.sabor-item .remover-complemento-btn:hover {
     background-color: #c82333;
 }
 
-/* --- NOVO MODAL: Seleção de Sabores (Mantido) --- */
+/* --- NOVO MODAL: Seleção de Sabores/Complementos (Mantido) --- */
 .modal-info-text {
     font-size: 1em;
     color: var(--cor-principal);
