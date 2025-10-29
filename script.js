@@ -1,7 +1,3 @@
-// ====================================================================
-// --- DADOS E VARIÁVEIS DE CONTROLE ---
-// ====================================================================
-
 // Objeto para armazenar o carrinho: { nome_item: [ {preco: X, sabores: [...], complementos: [...] } ] }
 let carrinho = {};
 
@@ -30,6 +26,7 @@ let itemPersonalizavelAtual = null;
 let maxSaboresPermitidos = 0; 
 let saboresSelecionados = [];
 let complementosSelecionados = []; 
+const MAX_COMPLEMENTOS_PERMITIDOS = 5; // NOVO LIMITE FIXO: Máximo de 5 complementos.
 
 // Credencial Fixa (Para acesso ao gerenciamento SEM Firebase)
 const NOME_ADMIN = "zeze"; 
@@ -94,7 +91,6 @@ function salvarLocalidadesLocais() {
 
 // ====================================================================
 // --- FUNÇÕES DE MANIPULAÇÃO DE CARRINHO E CHECKOUT ---
-// As funções de Carrinho precisam ser definidas antes dos Listeners de Checkout/Cardápio.
 // ====================================================================
 
 function calcularTotal() {
@@ -129,7 +125,7 @@ function calcularTrocoSimulado() {
 }
 
 function atualizarTotalItensBotao() {
-    let totalItens = Object.values(carrinho).reduce((sum, current) => sum + current.length, 0);
+    let totalItens = Object.values(carrinho).reduce((sum, current) => current.length, 0);
     document.getElementById('total-itens').textContent = totalItens;
 
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
@@ -773,8 +769,12 @@ function openComplementosModal() {
     const modal = document.getElementById('modal-complementos');
     const opcoesContainer = document.getElementById('complementos-opcoes');
     const contador = document.getElementById('complementos-count');
+    const info = document.getElementById('complementos-modal-info');
     
     opcoesContainer.innerHTML = '';
+
+    // ATUALIZAÇÃO: Define a informação do limite
+    info.textContent = `Selecione no máximo ${MAX_COMPLEMENTOS_PERMITIDOS} complementos.`;
 
     listaComplementosDisponiveis.sort().forEach(complemento => {
         const div = document.createElement('div');
@@ -784,7 +784,7 @@ function openComplementosModal() {
         opcoesContainer.appendChild(div);
     });
     
-    contador.textContent = '0';
+    contador.textContent = complementosSelecionados.length;
     
     document.querySelectorAll('#complementos-opcoes .sabor-item').forEach(s => s.classList.remove('selected'));
 
@@ -801,11 +801,15 @@ function handleComplementoClick(event) {
     const index = complementosSelecionados.indexOf(complemento);
     
     if (index > -1) {
+        // Deseleciona
         complementosSelecionados.splice(index, 1);
         compElement.classList.remove('selected');
-    } else {
+    } else if (complementosSelecionados.length < MAX_COMPLEMENTOS_PERMITIDOS) { // NOVO LIMITE
+        // Seleciona
         complementosSelecionados.push(complemento);
         compElement.classList.add('selected');
+    } else {
+        alert(`Você pode escolher no máximo ${MAX_COMPLEMENTOS_PERMITIDOS} complementos.`);
     }
 
     document.getElementById('complementos-count').textContent = complementosSelecionados.length;
@@ -822,7 +826,6 @@ function confirmarComplementos() {
         complementos: [...complementosSelecionados] 
     };
     
-    // CORREÇÃO CRÍTICA: Chama gerenciarCarrinho
     gerenciarCarrinho(itemPersonalizavelAtual, 'adicionar', itemPersonalizado);
     
     document.getElementById('modal-complementos').style.display = 'none';
@@ -1090,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializa bloqueando o scroll
     document.body.classList.add('no-scroll'); 
 
-    // --- 1. Lógica de Input e Detecção do Admin ---
+    // --- 1. Lógica de Input e Detecção do Admin (Mantida) ---
     inputAcessoRapidoWhatsapp.addEventListener('input', (e) => {
         e.target.value = phoneMask(e.target.value);
     });
@@ -1114,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 2. SUBMISSÃO DO FORMULÁRIO (ACESSO RÁPIDO CLIENTE) ---
+    // --- 2. SUBMISSÃO DO FORMULÁRIO (ACESSO RÁPIDO CLIENTE - Mantida) ---
     formAcessoRapido.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -1133,7 +1136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         finalizarAutenticacao();
     });
     
-    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN) ---
+    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN - Mantida) ---
     formLoginAdmin.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -1209,7 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inputRua.removeAttribute('required');
         inputNumero.removeAttribute('required');
         selectLocalidade.removeAttribute('required');
-        selectLocalidade.value = ""; // Reseta seleção do bairro
+        selectLocalidade.value = ""; 
 
         if (tipo === 'delivery') {
             
