@@ -1,59 +1,51 @@
-// Variáveis Globais de Controle e Firebase (Definidas no index.html)
+// Objeto para armazenar o carrinho: { nome_item: [ {preco: X, sabores: [...] } ] }
 let carrinho = {};
-let dadosCliente = { nome: '', whatsapp: '', email: '' }; 
-let detalhesTransacao = { rua: '', numero: '', referencia: '', pagamento: '', trocoPara: 0 };
 
+// Dados do Cliente (Preenchidos no Modal de Entrada)
+let dadosCliente = {
+    nome: '',
+    whatsapp: '',
+    email: '' 
+}; 
+
+// Dados de Transação
+let detalhesTransacao = {
+    rua: '',
+    numero: '',
+    referencia: '',
+    pagamento: '',
+    trocoPara: 0
+};
+
+// Variáveis de Controle
 let acessoGerenciamentoLiberado = false;
 let itemPersonalizavelAtual = null; 
 let maxSaboresPermitidos = 0; 
 let saboresSelecionados = [];
-let complementosSelecionados = []; 
-let itemPersonalizadoFinal = {}; 
-let produtosCardapioCache = []; // Cache local para os produtos carregados
 
-// Credenciais de Controle
+// Credencial Fixa (Para acesso ao gerenciamento SEM Firebase)
 const NOME_ADMIN = "zeze"; 
-const ADMIN_UID_PRINCIPAL = "oWClbuRYhgg3T2G0D6TahYlIB242"; // UID fornecido
+const EMAIL_ADMIN = "acesso@telaprincipal.com"; // NOVO EMAIL
+const CLIENTE = "telaprincipal"; // 
 
-// LISTAS GLOBAIS DE OPÇÕES (Agora populadas pelo Firestore)
-let listaSaboresDisponiveis = []; // Será carregada do Firestore
 
-const listaComplementosDisponiveis = [ // Itens fixos por simplicidade
-    { nome: "Extra Queijo", preco: 2.00 },
-    { nome: "Borda Recheada (Catupiry)", preco: 5.00 },
-    { nome: "Pimenta Extra", preco: 0.00 },
-    { nome: "Molho Especial (Sache)", preco: 1.50 }
+// LISTA GLOBAL DE SABORES (Temporária)
+let listaSaboresDisponiveis = [
+    "Carne", "Frango", "Camarão", "Charque", "4 Queijos", "Pizza", "Palmito", "Calabresa",
+    "Chocolate", "Doce de Leite", "Goiabada", "Banana com Canela"
 ];
 
 
 // ------------------------------------------------------------------
-// AUTENTICAÇÃO COM FIREBASE (MANTIDA)
+// AUTENTICAÇÃO SIMPLIFICADA (SEM FIREBASE)
 // ------------------------------------------------------------------
 
-/**
- * Tenta fazer login com as credenciais fornecidas usando o Firebase Auth.
- */
-async function loginAdminComFirebase(email, senha) {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-        alert("Erro: O Firebase SDK não foi carregado corretamente. Verifique o index.html.");
-        return false;
-    }
-    
-    try {
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, senha);
-        const user = userCredential.user;
-        
-        if (user.uid === ADMIN_UID_PRINCIPAL) {
-            console.log("Login Admin Firebase: SUCESSO!", user.uid);
-            return true;
-        } else {
-            await firebase.auth().signOut(); 
-            alert("Acesso negado: Este usuário não é o administrador principal.");
-            return false;
-        }
-    } catch (error) {
-        alert("Erro de login Admin: Credenciais inválidas ou conta não existe.");
-        console.error("Login Admin Firebase: Erro de autenticação:", error.code, error.message);
+function verificarLoginAdminLocal(email, cliente) {
+    if (email === EMAIL_ADMIN && cliente === CLIENTE) {
+        console.log("Login Admin Local: SUCESSO!");
+        return true;
+    } else {
+        console.error("Login Admin Local: Credenciais incorretas.");
         return false;
     }
 }
@@ -68,80 +60,6 @@ function finalizarAutenticacao() {
 
 
 // ------------------------------------------------------------------
-// INTEGRAÇÃO COM FIREBASE FIRESTORE (NOVAS FUNÇÕES)
-// ------------------------------------------------------------------
-
-/**
- * Carrega a lista de produtos da coleção 'produtos' no Firestore.
- */
-async function carregarCardapio() {
-    // Limpa a visualização e o cache
-    document.querySelectorAll('.categoria-section').forEach(section => {
-        const itens = section.querySelectorAll('.item-card');
-        itens.forEach(item => item.remove());
-    });
-    produtosCardapioCache = [];
-    
-    try {
-        const produtosRef = db.collection('produtos');
-        const snapshot = await produtosRef.get();
-        
-        if (snapshot.empty) {
-            console.log("Nenhum produto encontrado no Firestore.");
-            // Adiciona um aviso se a lista estiver vazia (apenas para o cliente ver)
-             document.getElementById('categoria-pastel').innerHTML += '<p class="aviso-gerenciamento">Nenhum item cadastrado no cardápio.</p>';
-            return;
-        }
-        
-        snapshot.forEach(doc => {
-            const produto = { id: doc.id, ...doc.data() };
-            produtosCardapioCache.push(produto);
-            
-            // Renderiza o item no cardápio
-            const categoriaSection = document.getElementById(`categoria-${produto.categoria}`);
-            if (categoriaSection) {
-                const novoItemCard = criarItemCardHTML(
-                    produto.nome, 
-                    produto.descricao, 
-                    produto.preco, 
-                    produto.categoria, 
-                    produto.personalizavel === 'sim', 
-                    produto.maxSabores, 
-                    produto.id 
-                );
-                categoriaSection.appendChild(novoItemCard);
-                atualizarQuantidadeDisplay(produto.nome); 
-            }
-        });
-    } catch (error) {
-        console.error("Erro ao carregar o cardápio do Firestore:", error);
-        alert("Erro ao carregar o cardápio. Verifique a conexão com o Firebase.");
-    }
-}
-
-/**
- * Carrega a lista de sabores do documento 'sabores' no Firestore.
- */
-async function carregarSabores() {
-    try {
-        const doc = await db.collection('configuracoes').doc('sabores').get();
-        
-        if (doc.exists && doc.data().lista) {
-            listaSaboresDisponiveis = doc.data().lista.sort();
-            console.log("Sabores carregados:", listaSaboresDisponiveis.length);
-        } else {
-             // Cria o documento inicial se não existir
-            await db.collection('configuracoes').doc('sabores').set({ lista: listaSaboresDisponiveis });
-            console.log("Documento de sabores inicializado no Firestore.");
-        }
-        
-    } catch (error) {
-        console.error("Erro ao carregar os sabores do Firestore:", error);
-    }
-}
-
-
-// ------------------------------------------------------------------
 // LÓGICA DO CARDÁPIO, CARRINHO E FINALIZAÇÃO
 // ------------------------------------------------------------------
 
@@ -152,6 +70,43 @@ const phoneMask = (value) => {
     value = value.replace(/(\d{2})(\d)/, "($1) $2");
     value = value.replace(/(\d{5})(\d{4})$/, "$1-$2");
     return value;
+}
+
+async function carregarCardapioDaAPI() {
+    // Limpa os itens existentes
+    document.querySelectorAll('.categoria-section').forEach(section => {
+        const itens = section.querySelectorAll('.item-card');
+        itens.forEach(item => item.remove());
+    });
+
+    // Dados Iniciais (Simulação de API)
+    const produtosIniciais = [
+         { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!", },
+         { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido.", },
+         { nome: "Mini Coxinha de Frango (12 un.)", preco: "15.00", categoria: "coxinha", personalizavel: "nao", descricao: "Porção com 12 mini coxinhas crocantes de frango.", },
+         { nome: "Pastel de Chocolate c/ Morango", preco: "12.00", categoria: "doces", personalizavel: "nao", descricao: "Chocolate cremoso e morangos frescos, uma combinação perfeita.", },
+         { nome: "Coca-Cola Lata 350ml", preco: "6.00", categoria: "bebidas", personalizavel: "nao", descricao: "Aquele clássico que refresca a qualquer hora.", },
+    ];
+
+    produtosIniciais.forEach(produto => {
+        const categoriaSection = document.getElementById(`categoria-${produto.categoria}`);
+        if (categoriaSection) {
+            const isPersonalizavel = produto.personalizavel === 'sim';
+            const maxSabores = produto.maxSabores || 0;
+            
+            const novoItemCard = criarItemCardHTML(
+                produto.nome, 
+                produto.descricao, 
+                produto.preco, 
+                produto.categoria, 
+                isPersonalizavel, 
+                maxSabores, 
+                produto.id // ID não está sendo usado neste exemplo local
+            );
+            categoriaSection.appendChild(novoItemCard);
+            atualizarQuantidadeDisplay(produto.nome); // Garante que a quantidade mostrada é 0
+        }
+    });
 }
 
 function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, maxSabores = 0, id = null) {
@@ -171,12 +126,14 @@ function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, 
 
     let botoesHTML = '';
     if (isPersonalizavel) {
+        // Botão de adicionar personalizado abre o modal de sabores
         botoesHTML = `
             <button class="remover" data-item="${nome}" disabled>-</button>
             <span class="quantidade" id="qty-${nome}">0</span>
             <button class="adicionar-personalizado" data-item="${nome}">+</button>
         `;
     } else {
+         // Botões de adicionar/remover padrão
          botoesHTML = `
             <button class="remover" data-item="${nome}">-</button>
             <span class="quantidade" id="qty-${nome}">0</span>
@@ -196,9 +153,6 @@ function criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, 
     return card;
 }
 
-/**
- * Adiciona um produto ao Firestore e recarrega o cardápio.
- */
 async function adicionarProdutoAoCardapio(event) {
     event.preventDefault();
 
@@ -206,97 +160,76 @@ async function adicionarProdutoAoCardapio(event) {
     const categoria = document.getElementById('categoria-produto').value;
     const nome = document.getElementById('nome-produto').value.trim();
     const isPersonalizavel = document.getElementById('is-personalizavel').checked; 
-    const maxSabores = isPersonalizavel ? parseInt(document.getElementById('max-sabores').value) : 0; 
+    const maxSabores = document.getElementById('max-sabores').value; 
     const descricao = document.getElementById('descricao-produto').value.trim();
-    const preco = parseFloat(document.getElementById('preco-produto').value);
+    const preco = document.getElementById('preco-produto').value;
 
-    if (!categoria || !nome || !descricao || isNaN(preco) || preco <= 0) {
+    if (!categoria || !nome || !descricao || isNaN(parseFloat(preco)) || parseFloat(preco) <= 0) {
         alert('Por favor, preencha todos os campos obrigatórios corretamente.');
         return;
     }
     
-    if (isPersonalizavel && (maxSabores < 1 || isNaN(maxSabores))) {
+    if (isPersonalizavel && (parseInt(maxSabores) < 1 || isNaN(parseInt(maxSabores)))) {
         alert('Se o produto for personalizável, o máximo de sabores a escolher deve ser 1 ou mais.');
         return;
     }
     
-    const nomeExistente = produtosCardapioCache.some(item => 
-        item.nome.toLowerCase() === nome.toLowerCase()
+    // Verifica se o nome já existe
+    const nomeExistente = Array.from(document.querySelectorAll('.item-card')).some(item => 
+        item.dataset.nome.toLowerCase() === nome.toLowerCase()
     );
     if (nomeExistente) {
-        alert(`O produto "${nome}" já existe no cardápio.`);
+        alert(`O produto "${nome}" já existe no cardápio. Por favor, use um nome diferente.`);
         return;
     }
 
-    try {
-        const novoProduto = {
-            nome: nome,
-            descricao: descricao,
-            preco: preco.toFixed(2), 
-            categoria: categoria,
-            personalizavel: isPersonalizavel ? 'sim' : 'nao',
-            maxSabores: maxSabores,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp() 
-        };
-        
-        await db.collection('produtos').add(novoProduto);
-        
-        form.reset();
-        document.getElementById('max-sabores-group').style.display = 'none'; 
-        alert(`Produto "${nome}" adicionado com sucesso e salvo no banco de dados!`);
-        
-        // Recarrega o cardápio e a lista de gerenciamento
-        await carregarCardapio();
-        alternarAbas('cardapio');
-
-    } catch (error) {
-        console.error("Erro ao adicionar produto:", error);
-        alert("Falha ao salvar o produto. Tente novamente.");
+    const categoriaSection = document.getElementById(`categoria-${categoria}`);
+    if (categoriaSection) {
+        const novoItemCard = criarItemCardHTML(nome, descricao, preco, categoria, isPersonalizavel, maxSabores); 
+        categoriaSection.appendChild(novoItemCard);
+        atualizarQuantidadeDisplay(nome); 
     }
+
+    form.reset();
+    document.getElementById('max-sabores-group').style.display = 'none'; 
+    alert(`Produto "${nome}" adicionado com sucesso (localmente)!`);
+    alternarAbas('cardapio');
 }
 
-/**
- * Remove um produto do Firestore e do cardápio.
- */
 async function removerProdutoDoCardapio(itemNome) {
-    const produto = produtosCardapioCache.find(p => p.nome === itemNome);
-    if (!produto || !produto.id) return;
+    const itemCard = document.querySelector(`.menu-container .item-card[data-nome="${itemNome}"]`);
+    if (!itemCard) return;
 
-    try {
-        await db.collection('produtos').doc(produto.id).delete();
-
-        // Limpa o carrinho para este item
-        if (carrinho[itemNome]) { delete carrinho[itemNome]; }
-
-        alert(`Produto "${itemNome}" removido permanentemente.`);
-        
-        // Recarrega o cardápio e a lista de gerenciamento
-        await carregarCardapio();
+    itemCard.remove();
+    
+    // Remove do carrinho se existir
+    if (carrinho[itemNome]) {
+        delete carrinho[itemNome];
         atualizarTotalItensBotao();
         renderizarCarrinhoModal();
-        renderizarListaGerenciamento();
-
-    } catch (error) {
-        console.error("Erro ao remover produto:", error);
-        alert("Falha ao remover o produto. Tente novamente.");
     }
+
+    alert(`Produto "${itemNome}" removido (temporariamente).`);
+    renderizarListaGerenciamento(); // Atualiza a lista de gerenciamento
 }
 
 function renderizarListaGerenciamento() {
     const listaContainer = document.getElementById('lista-produtos-gerenciar');
     listaContainer.innerHTML = ''; 
 
-    if (produtosCardapioCache.length === 0) {
+    const itensCardapio = document.querySelectorAll('.menu-container .item-card');
+    
+    if (itensCardapio.length === 0) {
         listaContainer.innerHTML = '<p class="aviso-gerenciamento">Nenhum produto cadastrado no cardápio.</p>';
         return;
     }
 
-    produtosCardapioCache.forEach(produto => {
-        const nome = produto.nome;
-        const preco = produto.preco;
-        const categoria = produto.categoria;
-        const isPersonalizavel = produto.personalizavel === 'sim'; 
-        const maxSabores = produto.maxSabores || 0;
+    itensCardapio.forEach(item => {
+        const nome = item.dataset.nome;
+        const preco = item.dataset.preco;
+        const categoria = item.dataset.categoria;
+        const isPersonalizavel = item.dataset.personalizavel === 'sim'; 
+        const maxSabores = item.dataset.maxSabores || 0;
         
         const categoriaLabel = categoria.charAt(0).toUpperCase() + categoria.slice(1);
         const personalizavelLabel = isPersonalizavel ? ` - (${maxSabores} SABORES)` : '';
@@ -313,62 +246,33 @@ function renderizarListaGerenciamento() {
     });
 }
 
-/**
- * Adiciona um sabor e salva a lista atualizada no Firestore.
- */
-async function adicionarSabor(event) {
+function adicionarSabor(event) {
     event.preventDefault();
     const input = document.getElementById('novo-sabor-input');
     let novoSabor = input.value.trim();
 
     if (novoSabor) {
+        // Formata o sabor (primeira letra maiúscula)
         novoSabor = novoSabor.charAt(0).toUpperCase() + novoSabor.slice(1).toLowerCase();
 
         if (!listaSaboresDisponiveis.includes(novoSabor)) {
             listaSaboresDisponiveis.push(novoSabor);
-            listaSaboresDisponiveis.sort(); 
-            
-            try {
-                // Salva a lista completa e atualizada no Firestore
-                await db.collection('configuracoes').doc('sabores').update({ lista: listaSaboresDisponiveis });
-                
-                renderizarListaSaboresGerenciamento();
-                input.value = '';
-                alert(`Sabor "${novoSabor}" adicionado e salvo permanentemente!`);
-
-            } catch (error) {
-                console.error("Erro ao adicionar sabor:", error);
-                alert("Falha ao salvar o sabor no banco de dados.");
-                // Se falhar, reverte localmente (opcional, mas bom)
-                listaSaboresDisponiveis.splice(listaSaboresDisponiveis.indexOf(novoSabor), 1);
-            }
+            listaSaboresDisponiveis.sort(); // Mantém em ordem alfabética
+            renderizarListaSaboresGerenciamento();
+            input.value = '';
+            alert(`Sabor "${novoSabor}" adicionado temporariamente.`);
         } else {
             alert(`O sabor "${novoSabor}" já existe na lista.`);
         }
     }
 }
 
-/**
- * Remove um sabor e salva a lista atualizada no Firestore.
- */
-async function removerSabor(sabor) {
+function removerSabor(sabor) {
     const index = listaSaboresDisponiveis.indexOf(sabor);
     if (index > -1) {
         listaSaboresDisponiveis.splice(index, 1);
-        
-        try {
-            // Salva a lista completa e atualizada no Firestore
-            await db.collection('configuracoes').doc('sabores').update({ lista: listaSaboresDisponiveis });
-            
-            renderizarListaSaboresGerenciamento();
-            alert(`Sabor "${sabor}" removido permanentemente.`);
-        } catch (error) {
-            console.error("Erro ao remover sabor:", error);
-            alert("Falha ao remover o sabor do banco de dados.");
-            // Reverte localmente
-            listaSaboresDisponiveis.push(sabor);
-            listaSaboresDisponiveis.sort();
-        }
+        renderizarListaSaboresGerenciamento();
+        alert(`Sabor "${sabor}" removido temporariamente.`);
     }
 }
 
@@ -404,6 +308,7 @@ function atualizarQuantidadeDisplay(itemNome) {
         
         const btnRemover = document.querySelector(`.quantidade-controle button[data-item="${itemNome}"].remover`);
         if (btnRemover) {
+            // Desabilita o botão de remover se a quantidade for 0
             btnRemover.disabled = quantidadeAtual === 0;
         }
     }
@@ -422,8 +327,10 @@ function gerenciarCarrinho(itemNome, acao, itemPersonalizado = null) {
 
     if (isPersonalizavel) {
         if (acao === 'adicionar' && itemPersonalizado) {
-            carrinho[itemNome].push(itemPersonalizado);
+            // Adiciona a entrada do item personalizado
+            carrinho[itemNome].push({ preco: itemPreco, sabores: itemPersonalizado.sabores });
         } else if (acao === 'remover' && carrinho[itemNome].length > 0) {
+            // Remove a última entrada (útil para personalizáveis)
             carrinho[itemNome].pop();
         }
     } else { 
@@ -455,20 +362,26 @@ function removerItemDoCarrinho(itemNome) {
 function calcularTotal() {
     let total = 0;
     for (const itemNome in carrinho) {
-        total += carrinho[itemNome].reduce((sum, item) => sum + item.preco, 0); 
+        // Soma o preço de cada instância do item
+        total += carrinho[itemNome].reduce((sum, item) => sum + item.preco, 0);
     }
     return total;
 }
 
 function atualizarTotalItensBotao() {
     let totalItens = Object.values(carrinho).reduce((sum, current) => sum + current.length, 0);
+    const totalValor = calcularTotal().toFixed(2).replace('.', ',');
+    
     document.getElementById('total-itens').textContent = totalItens;
+    document.getElementById('valor-total-carrinho-botao').textContent = `R$ ${totalValor}`;
 
+    // Habilita/Desabilita o botão de finalizar pedido no modal
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
-    if (finalizarPedidoBtnForm) { 
-        finalizarPedidoBtnForm.disabled = totalItens === 0; 
+    if (finalizarPedidoBtnForm) {
+        finalizarPedidoBtnForm.disabled = totalItens === 0;
     }
     
+    // Adiciona/Remove a classe de "pulse" no botão do carrinho
     const verCarrinhoBtn = document.getElementById('ver-carrinho-btn');
     if (totalItens > 0) {
         verCarrinhoBtn.classList.add('has-items');
@@ -489,36 +402,30 @@ function renderizarCarrinhoModal() {
         listaCarrinho.innerHTML = '<li class="carrinho-vazio">Seu carrinho está vazio.</li>';
     } else {
         const nomesItensOrdenados = Object.keys(carrinho).sort();
-
         nomesItensOrdenados.forEach(itemNome => {
             const itensDoTipo = carrinho[itemNome];
             const quantidade = itensDoTipo.length;
-            
-            const subtotal = itensDoTipo.reduce((sum, item) => sum + item.preco, 0);
-            
-            let detalhesItem = ''; 
-            const isPersonalizavelItem = itensDoTipo.every(item => item.sabores !== undefined);
+            const itemPrecoUnitario = itensDoTipo[0].preco;
+            const subtotal = quantidade * itemPrecoUnitario;
 
-            if (isPersonalizavelItem || itensDoTipo.some(item => item.complementos !== undefined)) {
-                detalhesItem = itensDoTipo.map((item, index) => {
-                    const sabores = item.sabores ? item.sabores.join(', ') : '';
-                    const complementos = item.complementos && item.complementos.length > 0 ? ` | Extras: ${item.complementos.join(', ')}` : '';
-                    
-                    if (sabores || complementos) {
-                        return `*#${index + 1}:* ${sabores}${complementos}`;
-                    }
-                    return '';
-                }).filter(line => line).join(' <br> ');
+            let descricaoSabores = '';
+            const isPersonalizavel = itensDoTipo[0].sabores !== undefined && itensDoTipo[0].sabores.length > 0;
+            
+            if (isPersonalizavel) {
+                // Monta a lista de sabores para cada unidade personalizada
+                descricaoSabores = itensDoTipo.map((item, index) => {
+                    return `*#${index + 1}:* ${item.sabores.join(', ')}`;
+                }).join(' <br> ');
             }
 
             const li = document.createElement('li');
             li.innerHTML = `
                 <span>${quantidade}x ${itemNome}</span>
-                <span>
-                    R$ ${subtotal.toFixed(2).replace('.', ',')}
+                <span> 
+                    R$ ${subtotal.toFixed(2).replace('.', ',')} 
                     <button class="item-remover" data-item="${itemNome}">Remover</button>
                 </span>
-                ${detalhesItem ? `<p class="sabores-detalhe">${detalhesItem}</p>` : ''}
+                ${isPersonalizavel ? `<p class="sabores-detalhe">${descricaoSabores}</p>` : ''}
             `;
             listaCarrinho.appendChild(li);
         });
@@ -526,6 +433,7 @@ function renderizarCarrinhoModal() {
 
     valorTotalSpan.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
     
+    // Recalcula o troco se a opção for dinheiro
     const selectPagamento = document.getElementById('select-pagamento');
     const inputValorPago = document.getElementById('input-valor-pago');
     if (selectPagamento && inputValorPago && selectPagamento.value === 'dinheiro') {
@@ -537,16 +445,15 @@ function calcularTrocoSimulado() {
     const total = calcularTotal();
     const valorPagoInput = document.getElementById('input-valor-pago');
     const avisoTroco = document.getElementById('aviso-troco');
-    
     const valorPago = parseFloat(valorPagoInput.value) || 0;
-    
+
     if (valorPago > total) {
         const troco = valorPago - total;
         avisoTroco.textContent = `Troco estimado: R$ ${troco.toFixed(2).replace('.', ',')}`;
         avisoTroco.style.color = 'var(--cor-sucesso)';
     } else if (valorPago === total && total > 0) {
-         avisoTroco.textContent = 'Pagamento exato. Sem necessidade de troco.';
-         avisoTroco.style.color = 'var(--cor-sucesso)';
+        avisoTroco.textContent = 'Pagamento exato. Sem necessidade de troco.';
+        avisoTroco.style.color = 'var(--cor-sucesso)';
     } else {
         avisoTroco.textContent = 'Informe o valor que será entregue para calcular o troco.';
         avisoTroco.style.color = 'var(--cor-info)';
@@ -564,16 +471,18 @@ function validarFormularioPedido() {
         alert("Por favor, preencha a Rua e o Número para entrega.");
         return false;
     }
+
     if (!pagamento) {
         alert("Por favor, selecione a forma de pagamento.");
         return false;
     }
 
-    if (pagamento === 'dinheiro' && total > 0 && valorPago < total) {
+    if (pagamento === 'dinheiro' && valorPago < total) {
         alert("O valor fornecido para troco deve ser igual ou superior ao Total do Pedido.");
         return false;
     }
-    
+
+    // Se tudo estiver OK, armazena os detalhes da transação
     detalhesTransacao.rua = rua;
     detalhesTransacao.numero = numero;
     detalhesTransacao.referencia = document.getElementById('input-referencia').value.trim();
@@ -583,448 +492,375 @@ function validarFormularioPedido() {
     return true;
 }
 
-function enviarPedidoWhatsApp(event) {
-    event.preventDefault(); 
-    
-    if (Object.keys(carrinho).length === 0) {
-        alert("Seu carrinho está vazio!");
-        return;
+function gerarMensagemWhatsApp() {
+    // 1. DADOS DO CLIENTE
+    let mensagem = `*PEDIDO NOVO - PASTEL CENTRAL*\n\n`;
+    mensagem += `*Cliente:* ${dadosCliente.nome}\n`;
+    mensagem += `*WhatsApp:* ${dadosCliente.whatsapp}\n`;
+    if (dadosCliente.email) {
+        mensagem += `*Email:* ${dadosCliente.email}\n`;
     }
-    if (!validarFormularioPedido()) {
-        return; 
-    }
+    mensagem += `\n------------------------\n`;
 
-    const total = calcularTotal();
-    const { rua, numero, referencia, pagamento, trocoPara } = detalhesTransacao;
+    // 2. ITENS DO PEDIDO
+    mensagem += `*ITENS:*\n`;
+    let totalItens = 0;
     
-    let mensagem = `*--- 📝 NOVO PEDIDO - PASTEL CENTRAL ---*\n\n`;
-    mensagem += `*CLIENTE:* ${dadosCliente.nome}\n`;
-    mensagem += `*CONTATO:* ${dadosCliente.whatsapp}\n`;
-    
-    if (dadosCliente.email && dadosCliente.email !== 'N/A - Cliente') {
-        mensagem += `*EMAIL:* ${dadosCliente.email}\n`;
-    }
-    mensagem += `*TOTAL DO PEDIDO:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
-    
-    mensagem += `*DETALHES DA ENTREGA:*\n`;
-    mensagem += `  - *Endereço:* ${rua}, Nº ${numero}\n`;
-    mensagem += `  - *Referência:* ${referencia || 'Nenhuma'}\n\n`;
-    
-    mensagem += `*PAGAMENTO:*\n`;
-    mensagem += `  - *Forma:* ${pagamento.toUpperCase()}\n`;
-    
-    if (pagamento === 'dinheiro') {
-        const troco = trocoPara - total;
-        mensagem += `  - *Valor Entregue:* R$ ${trocoPara.toFixed(2).replace('.', ',')}\n`;
-        mensagem += `  - *Troco Necessário:* R$ ${troco.toFixed(2).replace('.', ',')}\n`;
-    } else if (pagamento === 'cartao') {
-        mensagem += `  - Levar Máquina de Cartão.\n`;
-    }
-    
-    mensagem += `\n*ITENS SOLICITADOS:*\n`;
-
     const nomesItensOrdenados = Object.keys(carrinho).sort();
 
     nomesItensOrdenados.forEach(itemNome => {
         const itensDoTipo = carrinho[itemNome];
-        const quantidade = itensDoTipo.length;
-        
-        mensagem += `  > *${quantidade}x ${itemNome}* \n`;
+        const quantidadeTotal = itensDoTipo.length;
+        const subtotal = (quantidadeTotal * itensDoTipo[0].preco).toFixed(2).replace('.', ',');
+        totalItens += quantidadeTotal;
 
-        const isPersonalizavel = itensDoTipo[0].sabores !== undefined || itensDoTipo[0].complementos !== undefined;
+        mensagem += `- *${quantidadeTotal}x* ${itemNome} (R$ ${subtotal})\n`;
         
-        if (isPersonalizavel) {
-             itensDoTipo.forEach((item, index) => {
-                const sabores = item.sabores && item.sabores.length > 0 ? `Sabores: ${item.sabores.join(', ')}` : '';
-                const complementos = item.complementos && item.complementos.length > 0 ? ` | Extras: ${item.complementos.join(', ')}` : '';
-                
-                if (sabores || complementos) {
-                    mensagem += `    - Item #${index + 1}: ${sabores}${complementos}\n`;
-                }
+        // Adiciona detalhes de sabores
+        if (itensDoTipo[0].sabores && itensDoTipo[0].sabores.length > 0) {
+            itensDoTipo.forEach((item, index) => {
+                mensagem += `  -> #Item ${index + 1}: ${item.sabores.join(', ')}\n`;
             });
         }
     });
+    
+    mensagem += `\n*TOTAL DE ITENS:* ${totalItens}\n`;
+    mensagem += `*TOTAL DO PEDIDO:* R$ ${calcularTotal().toFixed(2).replace('.', ',')}\n`;
+    mensagem += `\n------------------------\n`;
 
-    mensagem += `\n*--- Aguardando Confirmação da Loja ---*`;
+    // 3. DETALHES DA ENTREGA E PAGAMENTO
+    mensagem += `*ENTREGA:* \n`;
+    mensagem += `Rua/Av: ${detalhesTransacao.rua}, Nº ${detalhesTransacao.numero}\n`;
+    if (detalhesTransacao.referencia) {
+        mensagem += `Referência: ${detalhesTransacao.referencia}\n`;
+    }
+    
+    mensagem += `\n*PAGAMENTO:*\n`;
+    mensagem += `Forma: ${detalhesTransacao.pagamento.toUpperCase()}\n`;
+    
+    if (detalhesTransacao.pagamento === 'dinheiro') {
+        const troco = (detalhesTransacao.trocoPara - calcularTotal()).toFixed(2).replace('.', ',');
+        mensagem += `Valor para Troco: R$ ${detalhesTransacao.trocoPara.toFixed(2).replace('.', ',')}\n`;
+        mensagem += `Troco a ser dado: R$ ${troco}\n`;
+    }
 
-    const numeroWhatsappLoja = '558199893952'; 
-    const linkWhatsapp = `https://wa.me/${numeroWhatsappLoja}?text=${encodeURIComponent(mensagem)}`;
-
-    window.open(linkWhatsapp, '_blank');
-
-    // Resetar o carrinho e a interface
-    carrinho = {};
-    document.getElementById('modal-carrinho').style.display = 'none';
-    carregarCardapio().then(() => { 
-        atualizarTotalItensBotao();
-    });
+    return encodeURIComponent(mensagem);
 }
 
+function enviarPedidoWhatsApp(event) {
+    event.preventDefault();
+    
+    if (Object.keys(carrinho).length === 0) {
+        alert('Seu carrinho está vazio. Adicione itens antes de finalizar.');
+        return;
+    }
+
+    if (validarFormularioPedido()) {
+        const mensagem = gerarMensagemWhatsApp();
+        const numeroWhatsapp = '5581912345678'; // Substitua pelo número real da loja
+        const url = `https://api.whatsapp.com/send?phone=${numeroWhatsapp}&text=${mensagem}`;
+        
+        window.open(url, '_blank');
+        
+        // Opcional: Limpar o carrinho e fechar o modal após o envio
+        carrinho = {};
+        atualizarTotalItensBotao();
+        document.getElementById('modal-carrinho').classList.remove('visible');
+        
+        // Reseta os campos do form de checkout para a próxima vez
+        document.getElementById('form-finalizar-pedido').reset();
+        document.getElementById('troco-group').style.display = 'none';
+        document.getElementById('aviso-troco').textContent = 'Informe o valor que será entregue para calcular o troco.';
+        document.getElementById('aviso-troco').style.color = 'var(--cor-info)';
+        
+        alert('Seu pedido foi enviado para o WhatsApp! Aguarde a confirmação da loja.');
+    }
+}
 
 // ------------------------------------------------------------------
-// LÓGICA DE MODAIS (SABORES E COMPLEMENTOS - MANTIDA)
+// LÓGICA DO MODAL DE SABORES
 // ------------------------------------------------------------------
 
-function openSaboresModal(itemNome, maxSabores) {
+function abrirModalSabores(itemNome, maxSabores) {
     const modal = document.getElementById('modal-sabores');
     const titulo = document.getElementById('sabores-modal-titulo');
     const info = document.getElementById('sabores-modal-info');
-    const contador = document.getElementById('sabores-contador');
-    const btnConfirmar = document.getElementById('confirmar-sabores-btn');
-    const opcoesContainer = document.getElementById('sabores-opcoes');
     
     itemPersonalizavelAtual = itemNome;
-    maxSaboresPermitidos = parseInt(maxSabores, 10);
+    maxSaboresPermitidos = parseInt(maxSabores);
     saboresSelecionados = [];
-    itemPersonalizadoFinal = {}; 
 
-    opcoesContainer.innerHTML = '';
+    titulo.textContent = `Escolha seus Sabores para ${itemNome}`;
+    info.textContent = `Selecione no máximo ${maxSaboresPermitidos} sabores.`;
     
-    if(listaSaboresDisponiveis.length === 0) {
-         opcoesContainer.innerHTML = '<p class="aviso-gerenciamento" style="flex-basis: 100%;">Nenhum sabor cadastrado. Avise o Administrador.</p>';
-         btnConfirmar.disabled = true;
-    } else {
-        listaSaboresDisponiveis.forEach(sabor => {
-            const div = document.createElement('div');
-            div.classList.add('sabor-item');
-            div.dataset.sabor = sabor;
-            div.textContent = sabor;
-            opcoesContainer.appendChild(div);
-        });
-    }
-    
-    titulo.textContent = `Escolha seus Sabores para "${itemNome}"`;
-    info.textContent = `Selecione exatamente ${maxSabores} sabores.`;
-    contador.textContent = `Sabores escolhidos: 0 de ${maxSabores}`;
-    btnConfirmar.disabled = true;
-    
-    document.querySelectorAll('#sabores-opcoes .sabor-item').forEach(s => s.classList.remove('selected'));
+    renderizarOpcoesSabores();
+    atualizarContadorSabores();
 
-    modal.style.display = 'block';
+    modal.classList.add('visible');
+    document.body.classList.add('no-scroll');
 }
 
-function handleSaborClick(event) {
-    const saborElement = event.target.closest('.sabor-item');
-    if (!saborElement) return;
+function renderizarOpcoesSabores() {
+    const opcoesContainer = document.getElementById('sabores-opcoes');
+    opcoesContainer.innerHTML = '';
 
-    const sabor = saborElement.dataset.sabor;
-    if (!sabor) return;
+    listaSaboresDisponiveis.forEach(sabor => {
+        const div = document.createElement('div');
+        div.classList.add('sabor-opcao');
+        div.textContent = sabor;
+        div.dataset.sabor = sabor;
 
+        div.addEventListener('click', () => toggleSabor(sabor, div));
+        opcoesContainer.appendChild(div);
+    });
+}
+
+function toggleSabor(sabor, elemento) {
     const index = saboresSelecionados.indexOf(sabor);
     
     if (index > -1) {
+        // Desselecionar
         saboresSelecionados.splice(index, 1);
-        saborElement.classList.remove('selected');
-    } else if (saboresSelecionados.length < maxSaboresPermitidos) {
-        saboresSelecionados.push(sabor);
-        saborElement.classList.add('selected');
+        elemento.classList.remove('selecionado');
     } else {
-        alert(`Você já escolheu o máximo de ${maxSaboresPermitidos} sabores. Desmarque um para escolher outro.`);
-    }
-
-    document.getElementById('sabores-contador').textContent = 
-        `Sabores escolhidos: ${saboresSelecionados.length} de ${maxSaboresPermitidos}`;
-        
-    const btnConfirmar = document.getElementById('confirmar-sabores-btn');
-    btnConfirmar.disabled = saboresSelecionados.length !== maxSaboresPermitidos;
-}
-
-function confirmarSabores() {
-    if (saboresSelecionados.length !== maxSaboresPermitidos) {
-        alert(`Por favor, selecione exatamente ${maxSaboresPermitidos} sabores.`);
-        return;
+        // Selecionar (se não exceder o limite)
+        if (saboresSelecionados.length < maxSaboresPermitidos) {
+            saboresSelecionados.push(sabor);
+            elemento.classList.add('selecionado');
+        } else {
+            alert(`Você já selecionou o máximo de ${maxSaboresPermitidos} sabores permitidos.`);
+        }
     }
     
-    const itemElement = document.querySelector(`[data-nome="${itemPersonalizavelAtual}"]`);
-    const itemPreco = parseFloat(itemElement.dataset.preco);
-    
-    itemPersonalizadoFinal = {
-        nome: itemPersonalizavelAtual,
-        preco: itemPreco, 
-        sabores: [...saboresSelecionados],
-        complementos: []
-    };
-    
-    document.getElementById('modal-sabores').style.display = 'none';
-    openComplementosModal(itemPersonalizavelAtual);
+    atualizarContadorSabores();
 }
 
-
-function atualizarPrecoExtraComplementos() {
-    let totalExtra = complementosSelecionados.reduce((sum, comp) => sum + comp.preco, 0);
-    document.getElementById('complementos-preco-extra').textContent = 
-        `Total de Complementos: R$ ${totalExtra.toFixed(2).replace('.', ',')}`;
-}
-
-function openComplementosModal(itemNome) {
-    const modal = document.getElementById('modal-complementos');
-    const titulo = document.getElementById('complementos-modal-titulo');
-    const opcoesContainer = document.getElementById('complementos-opcoes');
+function atualizarContadorSabores() {
+    const contador = document.getElementById('sabores-contador');
+    const btnAdicionar = document.getElementById('adicionar-sabores-carrinho');
+    const numSelecionados = saboresSelecionados.length;
     
-    complementosSelecionados = [];
-    titulo.textContent = `Adicionar Complementos ao "${itemNome}"`;
-
-    opcoesContainer.innerHTML = '';
-    listaComplementosDisponiveis.forEach(comp => {
-        const precoFormatado = comp.preco > 0 ? ` (+R$ ${comp.preco.toFixed(2).replace('.', ',')})` : '';
-        const div = document.createElement('div');
-        div.classList.add('sabor-item', 'complemento-item');
-        div.dataset.nome = comp.nome;
-        div.dataset.preco = comp.preco.toFixed(2);
-        div.innerHTML = `
-            <span>${comp.nome}</span>
-            <span class="preco-extra">${precoFormatado}</span>
-        `;
-        opcoesContainer.appendChild(div);
-    });
+    contador.textContent = `Sabores escolhidos: ${numSelecionados} de ${maxSaboresPermitidos}`;
     
-    atualizarPrecoExtraComplementos();
-    modal.style.display = 'block';
-}
-
-function handleComplementoClick(event) {
-    const compElement = event.target.closest('.complemento-item');
-    if (!compElement) return;
-
-    const nome = compElement.dataset.nome;
-    const preco = parseFloat(compElement.dataset.preco);
-    
-    const index = complementosSelecionados.findIndex(c => c.nome === nome);
-    
-    if (index > -1) {
-        complementosSelecionados.splice(index, 1);
-        compElement.classList.remove('selected');
+    // O botão só é habilitado se pelo menos 1 sabor for escolhido
+    if (numSelecionados > 0) {
+        btnAdicionar.disabled = false;
+        contador.style.color = 'var(--cor-sucesso)';
     } else {
-        complementosSelecionados.push({ nome, preco });
-        compElement.classList.add('selected');
+        btnAdicionar.disabled = true;
+        contador.style.color = 'var(--cor-destaque)';
     }
-
-    atualizarPrecoExtraComplementos();
 }
 
-function confirmarComplementos() {
-    if (!itemPersonalizadoFinal.nome) return;
-
-    const precoComplementos = complementosSelecionados.reduce((sum, comp) => sum + comp.preco, 0);
-    const precoFinal = itemPersonalizadoFinal.preco + precoComplementos;
-
-    itemPersonalizadoFinal.complementos = complementosSelecionados.map(c => c.nome);
-    itemPersonalizadoFinal.preco = precoFinal; 
+function adicionarPersonalizadoAoCarrinho() {
+    const modal = document.getElementById('modal-sabores');
     
-    gerenciarCarrinho(itemPersonalizadoFinal.nome, 'adicionar', itemPersonalizadoFinal);
-
-    itemPersonalizadoFinal = {};
-    complementosSelecionados = [];
-    document.getElementById('modal-complementos').style.display = 'none';
-}
-
-// Lógica de Alternância de Abas (Mantida)
-function alternarAbas(abaAtivaId) {
-    const cardapio = document.querySelector('.menu-container');
-    const gerenciamento = document.getElementById('gerenciamento');
-    const btnCardapio = document.getElementById('tab-cardapio');
-    const btnGerenciamento = document.getElementById('tab-gerenciamento');
-
-    if (abaAtivaId === 'cardapio') {
-        cardapio.style.display = 'block';
-        gerenciamento.style.display = 'none';
-        btnCardapio.classList.add('active');
-        btnGerenciamento.classList.remove('active');
-    } else if (abaAtivaId === 'gerenciamento') {
-        renderizarListaGerenciamento(); 
-        renderizarListaSaboresGerenciamento(); 
+    if (saboresSelecionados.length > 0) {
+        // Cria um novo item personalizado com os sabores escolhidos
+        const itemPersonalizado = {
+            sabores: [...saboresSelecionados] // Clonar para evitar referência
+        };
         
-        cardapio.style.display = 'none';
-        gerenciamento.style.display = 'block';
-        btnCardapio.classList.remove('active');
-        btnGerenciamento.classList.add('active');
+        gerenciarCarrinho(itemPersonalizavelAtual, 'adicionar', itemPersonalizado);
+        
+        // Fecha o modal e limpa o estado
+        itemPersonalizavelAtual = null;
+        maxSaboresPermitidos = 0;
+        saboresSelecionados = [];
+        modal.classList.remove('visible');
+        document.body.classList.remove('no-scroll');
+    } else {
+        alert('Por favor, selecione pelo menos um sabor.');
     }
 }
 
 
 // ------------------------------------------------------------------
-// EVENT LISTENERS (Ouvintes de Eventos)
+// INICIALIZAÇÃO E LISTENERS DE EVENTOS
 // ------------------------------------------------------------------
 
-document.addEventListener('DOMContentLoaded', () => {
+function alternarAbas(aba) {
+    const tabCardapioBtn = document.getElementById('tab-cardapio');
+    const tabGerenciamentoBtn = document.getElementById('tab-gerenciamento');
+    const cardapioContainer = document.querySelector('.menu-container');
+    const gerenciamentoContainer = document.getElementById('gerenciamento');
+    const footerCarrinho = document.getElementById('footer-carrinho');
     
-    // ... (Inicialização dos Elementos do DOM) ...
-    const modalEntrada = document.getElementById('modal-entrada');
-    const formAcessoRapido = document.getElementById('form-acesso-rapido'); 
-    const formLoginAdmin = document.getElementById('form-login-admin'); 
-    const inputAcessoRapidoNome = document.getElementById('acesso-rapido-nome');
-    const inputAcessoRapidoWhatsapp = document.getElementById('acesso-rapido-whatsapp');
-    const inputAdminEmail = document.getElementById('admin-email');
-    const inputTelaCliente = document.getElementById('Tela-cliente');
-    const btnGerenciamento = document.getElementById('tab-gerenciamento'); 
-    const btnCardapio = document.getElementById('tab-cardapio'); 
-    const separatorAuth = document.querySelector('.separator-auth');
-    const modal = document.getElementById('modal-carrinho');
-    const modalSabores = document.getElementById('modal-sabores');
-    const modalComplementos = document.getElementById('modal-complementos'); 
-    const btnVerCarrinho = document.getElementById('ver-carrinho-btn');
-    const spanFechar = document.querySelector('#modal-carrinho .fechar-modal');
-    const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
-    const selectPagamento = document.getElementById('select-pagamento');
-    const trocoGroup = document.getElementById('troco-group');
-    const inputValorPago = document.getElementById('input-valor-pago');
-    const closeSabores = document.querySelector('.fechar-sabores');
-    const saboresOpcoes = document.getElementById('sabores-opcoes');
-    const btnConfirmarSabores = document.getElementById('confirmar-sabores-btn');
-    const closeComplementos = document.querySelector('.fechar-complementos'); 
-    const complementosOpcoes = document.getElementById('complementos-opcoes'); 
-    const btnConfirmarComplementos = document.getElementById('confirmar-complementos-btn'); 
-    const formAdicionarProduto = document.getElementById('adicionar-produto-form');
-    const formAdicionarSabor = document.getElementById('adicionar-sabor-form');
-    // ... (Fim da Inicialização dos Elementos do DOM) ...
+    if (aba === 'cardapio') {
+        tabCardapioBtn.classList.add('active');
+        tabGerenciamentoBtn.classList.remove('active');
+        cardapioContainer.style.display = 'block';
+        gerenciamentoContainer.style.display = 'none';
+        footerCarrinho.style.display = 'block';
+    } else if (aba === 'gerenciamento' && acessoGerenciamentoLiberado) {
+        tabCardapioBtn.classList.remove('active');
+        tabGerenciamentoBtn.classList.add('active');
+        cardapioContainer.style.display = 'none';
+        gerenciamentoContainer.style.display = 'block';
+        footerCarrinho.style.display = 'none';
+        
+        renderizarListaGerenciamento();
+        renderizarListaSaboresGerenciamento();
+    }
+}
 
-    document.body.classList.add('no-scroll'); 
-
-    // --- 1. Lógica de Input e Detecção do Admin ---
-    inputAcessoRapidoWhatsapp.addEventListener('input', (e) => {
+function inicializarApp() {
+    // Carrega o cardápio inicial
+    carregarCardapioDaAPI();
+    
+    // Adiciona a máscara ao campo de WhatsApp
+    const whatsappInput = document.getElementById('acesso-rapido-whatsapp');
+    whatsappInput.addEventListener('input', (e) => {
         e.target.value = phoneMask(e.target.value);
     });
-    
-    inputAcessoRapidoNome.addEventListener('input', (e) => {
-        const nomeDigitado = e.target.value.trim().toLowerCase();
-        
-        if (nomeDigitado === NOME_ADMIN) {
-            formAcessoRapido.style.display = 'none';
-            if (separatorAuth) separatorAuth.style.display = 'none';
-            formLoginAdmin.style.display = 'block';
-            inputAdminEmail.value = "admin@dominio.com"; 
-            inputTelaCliente.focus();
-        } else if (formLoginAdmin.style.display === 'block') {
-            formLoginAdmin.style.display = 'none';
-            formAcessoRapido.style.display = 'block';
-            if (separatorAuth) separatorAuth.style.display = 'none';
-        }
-    });
 
-    // --- 2. SUBMISSÃO DO FORMULÁRIO (ACESSO RÁPIDO CLIENTE) ---
-    formAcessoRapido.addEventListener('submit', async (e) => {
+    // === Listeners do Modal de Entrada (Login) ===
+    document.getElementById('form-acesso-rapido').addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const numeroLimpo = inputAcessoRapidoWhatsapp.value.replace(/\D/g, '');
-        const nomeCliente = inputAcessoRapidoNome.value.trim();
+        // Armazena os dados do cliente
+        dadosCliente.nome = document.getElementById('acesso-rapido-nome').value.trim();
+        dadosCliente.whatsapp = document.getElementById('acesso-rapido-whatsapp').value.trim();
+        dadosCliente.email = document.getElementById('acesso-rapido-email').value.trim();
         
-        if (numeroLimpo.length !== 11) {
-            alert('Por favor, insira um WhatsApp válido (DDD + 9 dígitos).');
-            return;
-        }
-
-        dadosCliente.nome = nomeCliente;
-        dadosCliente.whatsapp = inputAcessoRapidoWhatsapp.value;
-        dadosCliente.email = 'N/A - Cliente'; 
+        // Injeta os dados no modal do carrinho (checkout)
+        document.getElementById('info-cliente-nome').textContent = dadosCliente.nome;
+        document.getElementById('info-cliente-whatsapp').textContent = dadosCliente.whatsapp;
 
         finalizarAutenticacao();
+        
+        // Exibe o botão de gerenciamento APENAS no cabeçalho, mas sem acesso ainda
+        document.getElementById('tab-gerenciamento').style.display = 'block';
     });
     
-    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN COM FIREBASE) ---
-    formLoginAdmin.addEventListener('submit', async (e) => {
+    document.getElementById('form-login-admin').addEventListener('submit', (e) => {
         e.preventDefault();
+        const email = document.getElementById('admin-email').value.trim();
+        const senha = document.getElementById('Tela-cliente').value.trim();
         
-        const email = inputAdminEmail.value;
-        const senha = inputTelaCliente.value;
-        
-        const sucessoLogin = await loginAdminComFirebase(email, senha);
-
-        if (sucessoLogin) {
+        if (verificarLoginAdminLocal(email, senha)) {
             acessoGerenciamentoLiberado = true;
-            btnGerenciamento.style.display = 'block'; 
-            btnCardapio.style.flexGrow = 0.5;
-            btnGerenciamento.style.flexGrow = 0.5;
             
-            dadosCliente.nome = "ADMINISTRADOR (Zeze)";
-            dadosCliente.whatsapp = "N/A - Gerenciamento";
-            dadosCliente.email = email;
-            alert(`Bem-vindo(a), Administrador! Acesso de gerenciamento liberado.`);
+            // Simula o login do cliente para preencher os dados do pedido
+            dadosCliente.nome = NOME_ADMIN;
+            dadosCliente.whatsapp = '(99) 99999-9999';
+            dadosCliente.email = EMAIL_ADMIN;
             
+            // Injeta os dados no modal do carrinho (checkout)
+            document.getElementById('info-cliente-nome').textContent = dadosCliente.nome + ' (ADMIN)';
+            document.getElementById('info-cliente-whatsapp').textContent = dadosCliente.whatsapp;
+
             finalizarAutenticacao();
-        } 
+            
+            // Oculta o botão de Voltar para Cliente
+            document.getElementById('toggle-acesso-rapido').style.display = 'none';
+        } else {
+            alert('Acesso negado. Verifique Email e Senha Admin.');
+        }
+    });
+    
+    // Alternância do Login (Admin/Cliente)
+    const formAcessoRapido = document.getElementById('form-acesso-rapido');
+    const formLoginAdmin = document.getElementById('form-login-admin');
+    const toggleAdminBtn = document.getElementById('toggle-admin-login');
+    const toggleClienteBtn = document.getElementById('toggle-acesso-rapido');
+    const separatorAuth = document.querySelector('.separator-auth');
+    
+    // Mostra o botão de alternância para o Admin (pois inicialmente está no Acesso Rápido)
+    toggleAdminBtn.style.display = 'block'; 
+    
+    toggleAdminBtn.addEventListener('click', () => {
+        formAcessoRapido.style.display = 'none';
+        formLoginAdmin.style.display = 'block';
+        toggleAdminBtn.style.display = 'none';
+        toggleClienteBtn.style.display = 'block';
+        separatorAuth.style.display = 'none';
     });
 
+    toggleClienteBtn.addEventListener('click', () => {
+        formAcessoRapido.style.display = 'block';
+        formLoginAdmin.style.display = 'none';
+        toggleAdminBtn.style.display = 'block';
+        toggleClienteBtn.style.display = 'none';
+        separatorAuth.style.display = 'none';
+    });
 
-    // --- 4. Demais Listeners (Carrinho, Sabores, Complementos, Gerenciamento) ---
-    
+    // === Listeners do Cardápio (Adicionar/Remover Item) ===
     document.querySelector('.menu-container').addEventListener('click', (e) => {
         const target = e.target;
         const itemNome = target.dataset.item;
+        
+        if (!itemNome) return;
 
-        if (itemNome) {
-            if (target.classList.contains('adicionar-personalizado')) {
-                const itemElement = document.querySelector(`.item-card[data-nome="${itemNome}"]`);
-                const maxSabores = itemElement ? itemElement.dataset.maxSabores : 5;
-                openSaboresModal(itemNome, maxSabores);
-            } 
-            else if (target.classList.contains('adicionar')) {
-                gerenciarCarrinho(itemNome, 'adicionar');
-            } 
-            else if (target.classList.contains('remover')) {
-                gerenciarCarrinho(itemNome, 'remover');
-            }
+        if (target.classList.contains('adicionar')) {
+            gerenciarCarrinho(itemNome, 'adicionar');
+        } else if (target.classList.contains('remover')) {
+            gerenciarCarrinho(itemNome, 'remover');
+        } else if (target.classList.contains('adicionar-personalizado')) {
+            const itemCard = target.closest('.item-card');
+            const maxSabores = itemCard.dataset.maxSabores;
+            abrirModalSabores(itemNome, maxSabores);
         }
     });
-
-    // Lógica do Modal do Carrinho
-    btnVerCarrinho.onclick = function() { renderizarCarrinhoModal(); modal.style.display = 'block'; }
-    spanFechar.onclick = function() { modal.style.display = 'none'; }
-    window.onclick = function(event) { 
-        if (event.target == modalSabores) {
-            modalSabores.style.display = 'none';
-        } else if (event.target == modalComplementos) {
-             modalComplementos.style.display = 'none';
-        } else if (event.target == modal && modalSabores.style.display === 'none' && modalComplementos.style.display === 'none') { 
-            modal.style.display = 'none'; 
-        } 
-    }
+    
+    // === Listeners do Carrinho/Checkout ===
+    document.getElementById('ver-carrinho-btn').addEventListener('click', () => {
+        document.getElementById('modal-carrinho').classList.add('visible');
+        document.body.classList.add('no-scroll');
+        renderizarCarrinhoModal();
+    });
+    
+    document.querySelector('.fechar-carrinho').addEventListener('click', () => {
+        document.getElementById('modal-carrinho').classList.remove('visible');
+        document.body.classList.remove('no-scroll');
+    });
     
     document.getElementById('lista-carrinho').addEventListener('click', (e) => {
         const target = e.target;
         if (target.classList.contains('item-remover')) {
             const itemNome = target.dataset.item;
-            removerItemDoCarrinho(itemNome);
+            if (confirm(`Tem certeza que deseja remover todos os itens do tipo "${itemNome}" do carrinho?`)) {
+                removerItemDoCarrinho(itemNome);
+            }
         }
     });
 
-    // Lógica de Pagamento e Troco
-    selectPagamento.addEventListener('change', (e) => {
+    // Lógica para mostrar/ocultar o campo de troco
+    document.getElementById('select-pagamento').addEventListener('change', (e) => {
+        const trocoGroup = document.getElementById('troco-group');
         if (e.target.value === 'dinheiro') {
             trocoGroup.style.display = 'block';
-            inputValorPago.setAttribute('required', 'required');
-            calcularTrocoSimulado(); 
+            calcularTrocoSimulado();
         } else {
             trocoGroup.style.display = 'none';
-            inputValorPago.removeAttribute('required');
         }
     });
+    
+    // Lógica para calcular troco
+    document.getElementById('input-valor-pago').addEventListener('input', calcularTrocoSimulado);
 
-    inputValorPago.addEventListener('input', calcularTrocoSimulado);
-    finalizarPedidoBtnForm.addEventListener('click', enviarPedidoWhatsApp);
+    // Finalizar pedido (Enviar para WhatsApp)
+    document.getElementById('form-finalizar-pedido').addEventListener('submit', enviarPedidoWhatsApp);
+    
+    // === Listeners do Modal de Sabores ===
+    document.querySelector('.fechar-sabores').addEventListener('click', () => {
+        document.getElementById('modal-sabores').classList.remove('visible');
+        document.body.classList.remove('no-scroll');
+    });
+    
+    document.getElementById('adicionar-sabores-carrinho').addEventListener('click', adicionarPersonalizadoAoCarrinho);
 
-
-    // Lógica do Modal de Seleção de Sabores
-    closeSabores.onclick = () => { modalSabores.style.display = 'none'; };
-    saboresOpcoes.addEventListener('click', handleSaborClick);
-    btnConfirmarSabores.addEventListener('click', confirmarSabores); 
-
-    // Lógica do Modal de Seleção de Complementos
-    closeComplementos.onclick = () => { 
-        modalComplementos.style.display = 'none'; 
-        itemPersonalizadoFinal = {};
-        complementosSelecionados = [];
-    };
-    complementosOpcoes.addEventListener('click', handleComplementoClick);
-    btnConfirmarComplementos.addEventListener('click', confirmarComplementos);
-
-
-    // Gerenciamento
+    // === Listeners da Área de Gerenciamento ===
+    const formAdicionarProduto = document.getElementById('adicionar-produto-form');
     formAdicionarProduto.addEventListener('submit', adicionarProdutoAoCardapio);
     
+    // Lógica para mostrar o campo de máx. sabores ao marcar o checkbox
     document.getElementById('is-personalizavel').addEventListener('change', (e) => {
-        document.getElementById('max-sabores-group').style.display = e.target.checked ? 'block' : 'none';
+        const maxSaboresGroup = document.getElementById('max-sabores-group');
+        maxSaboresGroup.style.display = e.target.checked ? 'block' : 'none';
     });
 
+    // Listener para remover produto do cardápio (dentro da aba de gerenciamento)
     document.getElementById('lista-produtos-gerenciar').addEventListener('click', (e) => {
         const target = e.target;
         if (target.classList.contains('item-gerenciar-remover-btn')) {
@@ -1036,6 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Gerenciamento de Sabores
+    const formAdicionarSabor = document.getElementById('form-adicionar-sabor');
     formAdicionarSabor.addEventListener('submit', adicionarSabor);
 
     document.getElementById('lista-sabores-atuais').addEventListener('click', (e) => {
@@ -1051,20 +888,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ouvinte para os botões de Aba
     document.getElementById('tab-cardapio').addEventListener('click', () => alternarAbas('cardapio'));
     
+    const btnGerenciamento = document.getElementById('tab-gerenciamento');
     btnGerenciamento.addEventListener('click', () => {
         if (acessoGerenciamentoLiberado) {
             alternarAbas('gerenciamento');
         } else {
-            alert('Acesso negado! A aba de Gerenciamento é restrita ao administrador.');
+            alert('Acesso negado! A aba de Gerenciamento é restrita ao Administrador.');
+            // Volta para a aba de cardápio caso clique por engano
+            alternarAbas('cardapio'); 
         }
     });
+}
 
-    // Inicialização do Firebase e Carregamento de Dados
-    if (typeof db !== 'undefined') {
-        carregarSabores().then(() => {
-             carregarCardapio();
-        });
-    } else {
-        alert("Erro fatal: Firestore não inicializado. Verifique a configuração no index.html.");
-    }
-});
+// Inicia a aplicação
+document.addEventListener('DOMContentLoaded', inicializarApp);
