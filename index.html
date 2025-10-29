@@ -38,11 +38,6 @@
                         >
                     </div>
 
-                    <div class="form-group">
-                        <label for="acesso-rapido-email">Email (Opcional):</label>
-                        <input type="email" id="acesso-rapido-email" placeholder="seu-email@dominio.com">
-                    </div>
-
                     <button type="submit" class="btn-primary">Entrar e Pedir</button>
                 </form>
                 
@@ -51,6 +46,10 @@
                 <form id="form-login-admin" class="auth-form" style="display: none;">
                     <h4>Acesso Restrito</h4>
                     
+                    <div class="form-group">
+                        <label for="admin-email">Email (Acesso Admin):</label>
+                        <input type="email" id="admin-email" value="admin@pastelcentral.com" placeholder="admin@pastelcentral.com" autocomplete="username" required>
+                    </div>
                     <div class="form-group">
                         <label for="Tela-cliente">Senha Admin:</label>
                         <input type="password" id="Tela-cliente" placeholder="Senha" autocomplete="current-password" required>
@@ -235,7 +234,22 @@
             
             <p id="sabores-contador" class="contador-text">Sabores escolhidos: 0 de 5</p>
             
-            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Adicionar ao Carrinho</button>
+            <button id="confirmar-sabores-btn" class="btn-primary" disabled>Confirmar Sabores</button>
+        </div>
+    </div>
+    
+    <div id="modal-complementos" class="modal" style="z-index: 1003; display: none;"> 
+        <div class="modal-conteudo">
+            <span class="fechar-modal fechar-complementos">&times;</span>
+            <h3 id="complementos-modal-titulo">Adicionar Complementos</h3>
+            <p class="modal-info-text">Selecione opções adicionais para o seu item.</p>
+
+            <div id="complementos-opcoes" class="sabores-opcoes-grid">
+                </div>
+            
+            <p id="complementos-preco-extra" class="contador-text">Total de Complementos: R$ 0,00</p>
+            
+            <button id="confirmar-complementos-btn" class="btn-primary">Adicionar ao Carrinho</button>
         </div>
     </div>
 
