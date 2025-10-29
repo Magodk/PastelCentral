@@ -48,7 +48,7 @@
                     
                     <div class="form-group">
                         <label for="admin-email">Email (Acesso Admin):</label>
-                        <input type="email" id="admin-email" value="admin@pastelcentral.com" placeholder="admin@pastelcentral.com" autocomplete="username" required>
+                        <input type="email" id="admin-email" value="admin@dominio.com" placeholder="admin@dominio.com" autocomplete="username" required>
                     </div>
                     <div class="form-group">
                         <label for="Tela-cliente">Senha Admin:</label>
@@ -256,7 +256,30 @@
     <footer>
         &copy; 2025 Pastel Central. Todos os direitos reservados.
     </footer>
-
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_AQUI", // ⚠️ SUBSTITUIR
+            authDomain: "SEU_PROJETO_ID.firebaseapp.com", // ⚠️ SUBSTITUIR
+            projectId: "SEU_PROJETO_ID", // ⚠️ SUBSTITUIR
+            storageBucket: "SEU_PROJETO_ID.appspot.com", // ⚠️ SUBSTITUIR
+            messagingSenderId: "SEU_MESSAGING_SENDER_ID", // ⚠️ SUBSTITUIR
+            appId: "SEU_APP_ID" // ⚠️ SUBSTITUIR
+        };
+        // Inicializa o Firebase
+        try {
+             firebase.initializeApp(firebaseConfig);
+             const auth = firebase.auth(); // Objeto de autenticação
+             const db = firebase.firestore(); // Objeto de banco de dados
+        } catch (e) {
+             console.error("Erro ao inicializar o Firebase. Verifique sua configuração.", e);
+        }
+    </script>
+    
     <script src="script.js"></script>
 </body>
 </html>

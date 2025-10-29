@@ -27,10 +27,9 @@ let saboresSelecionados = [];
 let complementosSelecionados = []; 
 let itemPersonalizadoFinal = {}; // Para guardar o estado do item após sabores
 
-// Credencial Fixa (Para acesso ao gerenciamento SEM Firebase)
+// Credenciais de Controle
 const NOME_ADMIN = "zeze"; 
-const EMAIL_ADMIN = "acesso@telaprincipal.com"; 
-const CLIENTE = "telaprincipal"; 
+const ADMIN_UID_PRINCIPAL = "oWClbuRYhgg3T2G0D6TahYlIB242"; // UID fornecido
 
 
 // LISTAS GLOBAIS DE OPÇÕES
@@ -48,15 +47,40 @@ const listaComplementosDisponiveis = [
 
 
 // ------------------------------------------------------------------
-// AUTENTICAÇÃO SIMPLIFICADA (SEM FIREBASE)
+// AUTENTICAÇÃO COM FIREBASE
 // ------------------------------------------------------------------
 
-function verificarLoginAdminLocal(email, cliente) {
-    if (email === EMAIL_ADMIN && cliente === CLIENTE) {
-        console.log("Login Admin Local: SUCESSO!");
-        return true;
-    } else {
-        console.error("Login Admin Local: Credenciais incorretas.");
+/**
+ * Tenta fazer login com as credenciais fornecidas usando o Firebase Auth.
+ * @param {string} email 
+ * @param {string} senha 
+ * @returns {boolean}
+ */
+async function loginAdminComFirebase(email, senha) {
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        alert("Erro: O Firebase SDK não foi carregado corretamente. Verifique o index.html.");
+        return false;
+    }
+    
+    try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, senha);
+        const user = userCredential.user;
+        
+        // Verifica se o UID do usuário logado é o UID principal
+        if (user.uid === ADMIN_UID_PRINCIPAL) {
+            console.log("Login Admin Firebase: SUCESSO!", user.uid);
+            return true;
+        } else {
+            // Se o login for válido, mas o UID não for o Admin principal
+            await firebase.auth().signOut(); 
+            alert("Acesso negado: Este usuário não é o administrador principal.");
+            console.warn("Login bem-sucedido, mas o UID não corresponde ao Admin principal.");
+            return false;
+        }
+    } catch (error) {
+        // Exibe erro genérico para segurança, enquanto registra o erro no console
+        alert("Erro de login Admin: Credenciais inválidas ou conta não existe.");
+        console.error("Login Admin Firebase: Erro de autenticação:", error.code, error.message);
         return false;
     }
 }
@@ -83,13 +107,13 @@ const phoneMask = (value) => {
     return value;
 }
 
-// O restante das funções do Cardápio (carregarCardapioDaAPI, criarItemCardHTML, adicionarProdutoAoCardapio, removerProdutoDoCardapio, etc.) permanece inalterado.
 async function carregarCardapioDaAPI() {
     document.querySelectorAll('.categoria-section').forEach(section => {
         const itens = section.querySelectorAll('.item-card');
         itens.forEach(item => item.remove());
     });
 
+    // Produtos Iniciais (Hardcoded por enquanto, pode ser substituído pelo Firestore)
     const produtosIniciais = [
          { nome: "Pastel Gourmet (Escolha 5 Sabores)", preco: "30.00", categoria: "pastel", personalizavel: "sim", maxSabores: "5", descricao: "Selecione 5 sabores exclusivos para o seu pastel perfeito!", },
          { nome: "Pastel de Carne com Queijo", preco: "8.50", categoria: "pastel", personalizavel: "nao", descricao: "Deliciosa carne moída temperada com queijo derretido.", },
@@ -304,7 +328,7 @@ function renderizarListaSaboresGerenciamento() {
 }
 
 
-// Funções de Carrinho e Checkout (Mantidas)
+// Funções de Carrinho e Checkout
 function atualizarQuantidadeDisplay(itemNome) { 
     const qtySpan = document.getElementById(`qty-${itemNome}`);
     if (qtySpan) {
@@ -514,7 +538,6 @@ function enviarPedidoWhatsApp(event) {
     mensagem += `*CLIENTE:* ${dadosCliente.nome}\n`;
     mensagem += `*CONTATO:* ${dadosCliente.whatsapp}\n`;
     
-    // O campo de email do cliente foi removido, só o admin tem email.
     if (dadosCliente.email && dadosCliente.email !== 'N/A - Cliente') {
         mensagem += `*EMAIL:* ${dadosCliente.email}\n`;
     }
@@ -590,7 +613,7 @@ function openSaboresModal(itemNome, maxSabores) {
     itemPersonalizavelAtual = itemNome;
     maxSaboresPermitidos = parseInt(maxSabores, 10);
     saboresSelecionados = [];
-    itemPersonalizadoFinal = {}; // Limpa o item anterior
+    itemPersonalizadoFinal = {}; 
 
     opcoesContainer.innerHTML = '';
     listaSaboresDisponiveis.sort().forEach(sabor => {
@@ -637,7 +660,6 @@ function handleSaborClick(event) {
     btnConfirmar.disabled = saboresSelecionados.length !== maxSaboresPermitidos;
 }
 
-// 📌 MUDANÇA: AGORA CHAMA openComplementosModal()
 function confirmarSabores() {
     if (saboresSelecionados.length !== maxSaboresPermitidos) {
         alert(`Por favor, selecione exatamente ${maxSaboresPermitidos} sabores.`);
@@ -664,7 +686,7 @@ function confirmarSabores() {
 
 
 // ------------------------------------------------------------------
-// LÓGICA DE COMPLEMENTOS (NOVO)
+// LÓGICA DE COMPLEMENTOS (AGORA INTEGRADA)
 // ------------------------------------------------------------------
 
 function atualizarPrecoExtraComplementos() {
@@ -721,7 +743,6 @@ function handleComplementoClick(event) {
     atualizarPrecoExtraComplementos();
 }
 
-// 📌 NOVO: Finaliza a personalização e adiciona ao carrinho
 function confirmarComplementos() {
     if (!itemPersonalizadoFinal.nome) return;
 
@@ -744,7 +765,7 @@ function confirmarComplementos() {
 }
 
 // ------------------------------------------------------------------
-// Lógica de Alternância de Abas (Mantida)
+// Lógica de Alternância de Abas 
 // ------------------------------------------------------------------
 function alternarAbas(abaAtivaId) {
     const cardapio = document.querySelector('.menu-container');
@@ -784,11 +805,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inputs de Cliente
     const inputAcessoRapidoNome = document.getElementById('acesso-rapido-nome');
     const inputAcessoRapidoWhatsapp = document.getElementById('acesso-rapido-whatsapp');
-    // const inputAcessoRapidoEmail = document.getElementById('acesso-rapido-email'); // REMOVIDO
     
     // Inputs de Admin
     const inputAdminEmail = document.getElementById('admin-email');
-    const inputTelaCliente = document.getElementById('Tela-cliente');
+    const inputTelaCliente = document.getElementById('Tela-cliente'); // Campo de Senha
     
     // Elementos de Controle
     const btnGerenciamento = document.getElementById('tab-gerenciamento'); 
@@ -799,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Demais Elementos de Modais
     const modal = document.getElementById('modal-carrinho');
     const modalSabores = document.getElementById('modal-sabores');
-    const modalComplementos = document.getElementById('modal-complementos'); // 📌 NOVO
+    const modalComplementos = document.getElementById('modal-complementos'); 
     const btnVerCarrinho = document.getElementById('ver-carrinho-btn');
     const spanFechar = document.querySelector('#modal-carrinho .fechar-modal');
     const finalizarPedidoBtnForm = document.getElementById('finalizar-pedido-btn-form');
@@ -809,9 +829,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSabores = document.querySelector('.fechar-sabores');
     const saboresOpcoes = document.getElementById('sabores-opcoes');
     const btnConfirmarSabores = document.getElementById('confirmar-sabores-btn');
-    const closeComplementos = document.querySelector('.fechar-complementos'); // 📌 NOVO
-    const complementosOpcoes = document.getElementById('complementos-opcoes'); // 📌 NOVO
-    const btnConfirmarComplementos = document.getElementById('confirmar-complementos-btn'); // 📌 NOVO
+    const closeComplementos = document.querySelector('.fechar-complementos'); 
+    const complementosOpcoes = document.getElementById('complementos-opcoes'); 
+    const btnConfirmarComplementos = document.getElementById('confirmar-complementos-btn'); 
     const formAdicionarProduto = document.getElementById('adicionar-produto-form');
     const formAdicionarSabor = document.getElementById('adicionar-sabor-form');
 
@@ -834,7 +854,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (separatorAuth) separatorAuth.style.display = 'none';
             formLoginAdmin.style.display = 'block';
             
-            inputAdminEmail.value = EMAIL_ADMIN; 
+            // Define o email do Admin para o que está no Firebase
+            inputAdminEmail.value = "admin@dominio.com"; 
             inputTelaCliente.focus();
 
         } else if (formLoginAdmin.style.display === 'block') {
@@ -851,7 +872,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const numeroLimpo = inputAcessoRapidoWhatsapp.value.replace(/\D/g, '');
         const nomeCliente = inputAcessoRapidoNome.value.trim();
-        // const emailCliente = inputAcessoRapidoEmail.value.trim(); // REMOVIDO
         
         if (numeroLimpo.length !== 11) {
             alert('Por favor, insira um WhatsApp válido (DDD + 9 dígitos).');
@@ -861,19 +881,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Coleta de Dados do Cliente
         dadosCliente.nome = nomeCliente;
         dadosCliente.whatsapp = inputAcessoRapidoWhatsapp.value;
-        dadosCliente.email = 'N/A - Cliente'; // Email setado como N/A
+        dadosCliente.email = 'N/A - Cliente'; 
 
         finalizarAutenticacao();
     });
     
-    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN) ---
+    // --- 3. SUBMISSÃO DO FORMULÁRIO (LOGIN ADMIN COM FIREBASE) ---
     formLoginAdmin.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const email = inputAdminEmail.value;
-        const cliente = inputTelaCliente.value;
+        const senha = inputTelaCliente.value;
         
-        const sucessoLogin = verificarLoginAdminLocal(email, cliente); // Usa verificação local
+        const sucessoLogin = await loginAdminComFirebase(email, senha);
 
         if (sucessoLogin) {
             acessoGerenciamentoLiberado = true;
@@ -890,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             finalizarAutenticacao();
         } else {
-             alert('Erro de login Admin. Email ou Senha incorretos.');
+             // O erro já é alertado dentro da função loginAdminComFirebase
         } 
     });
 
@@ -957,9 +977,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lógica do Modal de Seleção de Sabores
     closeSabores.onclick = () => { modalSabores.style.display = 'none'; };
     saboresOpcoes.addEventListener('click', handleSaborClick);
-    btnConfirmarSabores.addEventListener('click', confirmarSabores); // 📌 Agora chama Complementos
+    btnConfirmarSabores.addEventListener('click', confirmarSabores); 
 
-    // Lógica do Modal de Seleção de Complementos 📌 NOVO
+    // Lógica do Modal de Seleção de Complementos
     closeComplementos.onclick = () => { 
         modalComplementos.style.display = 'none'; 
         itemPersonalizadoFinal = {}; // Limpar se o usuário fechar
