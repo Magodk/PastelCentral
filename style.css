@@ -27,28 +27,116 @@ body {
     background-color: var(--cor-fundo);
     color: var(--cor-texto);
     line-height: 1.6;
-    padding-bottom: 80px; 
-    overflow-x: hidden;
 }
 
-/* CLASSE DE CORREÇÃO DE BUG: BLOQUEIA SCROLL QUANDO O MODAL DE LOGIN ESTÁ ATIVO */
-.no-scroll {
-    overflow: hidden !important; 
+/* Estado de scroll para o Modal de Entrada */
+body.no-scroll {
+    overflow: hidden;
 }
 
-/* --- Modal de Entrada (Splash Screen) --- */
+/* Botões Reutilizáveis */
+.btn-primary {
+    background-color: var(--cor-destaque);
+    color: var(--cor-branco);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    background-color: #e67e00; 
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+    background-color: var(--cor-cinza-claro);
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------
+   LAYOUT GERAL
+   ------------------------------------------------------------------ */
+
+header {
+    background-color: var(--cor-principal);
+    color: var(--cor-branco);
+    padding: 15px 20px;
+    box-shadow: var(--sombra-media);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 15px;
+    border: 3px solid var(--cor-secundaria);
+    object-fit: cover;
+}
+
+header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 2em;
+    margin-bottom: 0;
+}
+
+header p {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+main {
+    max-width: 800px;
+    margin: 20px auto 80px auto; /* Espaço para o carrinho flutuante */
+    padding: 0 10px;
+}
+
+footer {
+    text-align: center;
+    padding: 15px;
+    font-size: 0.8em;
+    color: #6c757d;
+    background-color: var(--cor-cinza-claro);
+    border-top: 1px solid var(--cor-borda);
+}
+
+/* ------------------------------------------------------------------
+   MODAL DE ENTRADA (AUTENTICAÇÃO)
+   ------------------------------------------------------------------ */
+
 .modal-entrada {
     position: fixed;
-    z-index: 9999; 
+    z-index: 1000; 
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(var(--cor-principal), 0.95);
+    background-color: rgba(0, 0, 0, 0.7); 
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s, visibility 0.3s;
 }
 
 .modal-entrada.hidden {
@@ -57,817 +145,306 @@ body {
 }
 
 .modal-entrada-conteudo {
-    /* AJUSTE VISUAL: Máx. 400px de largura */
-    width: 95%;
-    max-width: 400px; 
+    background-color: var(--cor-branco);
     padding: 30px;
     border-radius: 12px;
     box-shadow: var(--sombra-pesada);
-    background-color: var(--cor-branco);
+    width: 90%;
+    max-width: 400px;
     text-align: center;
-    animation: fadeInScale 0.4s ease-out;
-}
-
-@keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.9); }
-    to { transform: scale(1); }
 }
 
 .modal-logo {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-    margin-bottom: 20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
 }
 
 .modal-entrada-conteudo h2 {
     font-family: 'Poppins', sans-serif;
     color: var(--cor-principal);
     margin-bottom: 10px;
-    font-size: 1.8em;
 }
 
-.modal-entrada-conteudo p {
-    color: var(--cor-texto);
-    margin-bottom: 25px;
-    font-size: 0.95em;
+#auth-info-text {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #6c757d;
 }
 
-/* Estilos de inputs nos Formulários de Autenticação */
 .auth-form {
-    padding-top: 10px;
-    position: relative; 
+    padding: 15px;
+    border: 1px solid var(--cor-cinza-claro);
+    border-radius: 8px;
+    margin-bottom: 15px;
 }
 
 .auth-form h4 {
-    font-family: 'Poppins', sans-serif;
     color: var(--cor-destaque);
-    margin-bottom: 15px;
-    font-size: 1.4em;
-    text-align: center;
-}
-
-.auth-form .form-group {
-    text-align: left;
-    margin-bottom: 18px;
-}
-
-.auth-form label {
-    font-weight: 600;
-    display: block;
-    margin-bottom: 8px;
-    color: var(--cor-texto);
-}
-
-.auth-form input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    font-size: 1em;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.auth-form input:focus {
-    border-color: var(--cor-destaque);
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
-    outline: none;
-}
-/* FIM Estilos de Modal de Login/Cadastro */
-
-/* Estilo do Botão Primário (Usado em todos os envios de formulário) */
-.btn-primary {
-    width: 100%;
-    padding: 14px 20px;
-    background-color: var(--cor-sucesso);
-    color: var(--cor-branco);
-    border: none;
-    border-radius: 8px;
+    margin-bottom: 10px;
     font-size: 1.1em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s ease-in-out;
-    margin-top: 20px;
-    box-shadow: var(--sombra-leve);
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: #218838;
-    transform: translateY(-1px);
-}
-
-.btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-.btn-primary:disabled {
-    background-color: var(--cor-cinza-claro);
-    color: #6c757d;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-
-/* Separador "Ou" (Mantido o estilo, mas escondido no HTML) */
 .separator-auth {
     text-align: center;
-    margin: 20px 0 0;
-    font-weight: 600;
+    margin: 10px 0;
+    font-size: 0.8em;
     color: #999;
-    position: relative;
 }
 
-.separator-auth::before,
-.separator-auth::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 40%;
-    height: 1px;
-    background: var(--cor-borda);
-}
-
-.separator-auth::before {
-    left: 0;
-}
-
-.separator-auth::after {
-    right: 0;
-}
-/* --- FIM Modal de Entrada --- */
-
-/* Cabeçalho (Mantido) */
-header {
-    background-color: var(--cor-principal);
-    color: var(--cor-branco);
-    padding: 15px 20px;
-    text-align: center;
-    box-shadow: var(--sombra-media);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    max-width: 960px;
-    width: 100%;
-}
-
-.header-logo {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
-    margin-right: 15px;
-    filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
-}
-
-.header-text {
+.form-group {
+    margin-bottom: 10px;
     text-align: left;
 }
 
-header h1 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 2.2em;
-    margin-bottom: 2px;
-}
-
-header p {
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
     font-size: 0.9em;
-    opacity: 0.9;
-    font-weight: 400;
 }
 
-/* --- Botões de Alternância de Abas do Cardápio (Mantido) --- */
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+/* ------------------------------------------------------------------
+   ABAS DE NAVEGAÇÃO
+   ------------------------------------------------------------------ */
+
 .tab-buttons {
     display: flex;
-    width: 100%;
-    background-color: var(--cor-branco);
-    box-shadow: var(--sombra-leve);
-    border-bottom: 1px solid var(--cor-borda);
-    position: sticky;
-    top: 0;
-    z-index: 99;
+    justify-content: center;
+    max-width: 800px;
+    margin: 15px auto;
+    padding: 0 10px;
 }
 
 .tab-buttons button {
     flex-grow: 1;
-    padding: 15px 10px;
     background-color: var(--cor-cinza-claro);
-    border: none;
-    border-bottom: 3px solid transparent;
+    color: var(--cor-texto);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px 8px 0 0;
+    padding: 10px 15px;
     cursor: pointer;
     font-size: 1em;
-    font-family: 'Poppins', sans-serif;
     font-weight: 600;
-    color: #6c757d;
-    transition: all 0.2s;
-    outline: none;
-}
-
-.tab-buttons button:hover:not(.active) {
-    background-color: #e2e6ea;
-    color: var(--cor-texto);
+    transition: background-color 0.3s, color 0.3s;
+    margin: 0 2px;
 }
 
 .tab-buttons button.active {
     background-color: var(--cor-branco);
-    border-bottom-color: var(--cor-destaque);
-    color: var(--cor-destaque);
-    box-shadow: inset 0 -3px 0 var(--cor-destaque);
+    color: var(--cor-principal);
+    border-bottom-color: var(--cor-branco);
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
 
-
-/* Cardápio e Itens (Mantido) */
-.menu-container {
-    padding: 20px;
-    max-width: 960px;
-    margin: 0 auto;
+.tab-buttons button:hover:not(.active) {
+    background-color: #e0e0e0;
 }
 
-/* Título da Categoria */
+/* ------------------------------------------------------------------
+   ESTILOS DO CARDÁPIO
+   ------------------------------------------------------------------ */
+
 .categoria-section {
-    margin-bottom: 30px; 
+    background-color: var(--cor-branco);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 15px;
+    box-shadow: var(--sombra-leve);
 }
 
 .categoria-titulo {
     font-family: 'Poppins', sans-serif;
+    font-weight: 600;
     color: var(--cor-principal);
-    margin: 30px 0 20px 0;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
     border-bottom: 2px solid var(--cor-secundaria);
-    display: block;
-    padding-bottom: 10px;
-    font-size: 1.8em;
-    font-weight: 700;
-    text-align: center;
+    font-size: 1.6em;
 }
 
 .item-card {
-    background-color: var(--cor-branco);
-    border-radius: 10px;
-    padding: 18px;
-    margin-bottom: 18px;
-    box-shadow: var(--sombra-leve);
-    border-left: 6px solid var(--cor-secundaria);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px dashed var(--cor-cinza-claro);
 }
 
-.item-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--sombra-media);
+.item-card:last-child {
+    border-bottom: none;
 }
-
-/* Destaca itens Personalizáveis */
-.item-card.personalizavel-item {
-    border-left-color: var(--cor-info);
-    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.15);
-}
-
 
 .item-card h3 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--cor-principal);
-    margin-bottom: 8px;
-    font-size: 1.4em;
-    line-height: 1.3;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--cor-texto);
+    flex-basis: 100%;
+    margin-bottom: 5px;
 }
 
 .item-card .descricao {
-    font-size: 0.95em;
-    color: #666;
-    margin-bottom: 12px;
+    font-size: 0.9em;
+    color: #6c757d;
+    flex-basis: 100%;
+    margin-bottom: 10px;
 }
 
 .item-card .preco {
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: 700;
     color: var(--cor-destaque);
-    margin-bottom: 15px;
+    flex-grow: 1;
 }
 
-/* Controle de Quantidade */
 .quantidade-controle {
     display: flex;
     align-items: center;
-    gap: 12px;
-    width: fit-content;
-    margin-left: auto;
+    gap: 5px;
 }
 
-/* Estilo para botão ADICIONAR PERSONALIZADO */
-.quantidade-controle .adicionar-personalizado {
-    background-color: var(--cor-sucesso);
-    color: var(--cor-branco);
+.quantidade-controle button {
+    background-color: var(--cor-secundaria);
+    color: var(--cor-principal);
     border: none;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    font-size: 1.5em;
-    font-weight: bold;
+    font-size: 1.1em;
+    font-weight: 700;
     cursor: pointer;
+    transition: background-color 0.2s;
     flex-shrink: 0;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: var(--sombra-leve);
-}
-.quantidade-controle .adicionar-personalizado:hover {
-    background-color: #218838;
-    transform: translateY(-1px);
-}
-.quantidade-controle .adicionar-personalizado:active {
-    transform: translateY(0);
 }
 
-/* Estilo para botões padrões */
-.quantidade-controle button:not(.adicionar-personalizado) {
-    background-color: var(--cor-principal);
-    color: var(--cor-branco);
-    border: none;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    font-size: 1.5em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    flex-shrink: 0;
-    box-shadow: var(--sombra-leve);
+.quantidade-controle button:hover {
+    background-color: #ffc400;
 }
-.quantidade-controle button:not(.adicionar-personalizado):hover:not(:disabled) {
-    background-color: #6b370d;
-    transform: translateY(-1px);
-}
-.quantidade-controle button:not(.adicionar-personalizado):active {
-    transform: translateY(0);
-}
+
 .quantidade-controle button:disabled {
     background-color: var(--cor-cinza-claro);
     color: #999;
     cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
 }
-
 
 .quantidade {
-    font-size: 1.3em;
-    font-weight: 700;
-    min-width: 25px;
-    text-align: center;
-    color: var(--cor-texto);
-}
-
-/* Detalhe de sabores no modal do carrinho */
-.sabores-detalhe {
-    font-size: 0.8em;
-    color: #555;
-    margin-top: 8px;
-    padding-left: 15px;
-    border-top: 1px dashed var(--cor-borda);
-    padding-top: 8px;
-    line-height: 1.4;
-}
-
-
-/* ================================================= */
-/* SEÇÃO DE GERENCIAMENTO (Mantido) */
-/* ================================================= */
-
-.gerenciamento-container {
-    padding: 20px;
-    background-color: var(--cor-fundo);
-    max-width: 960px;
-    margin: 0 auto;
-}
-
-.gerenciamento-container h2 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--cor-principal);
-    margin-bottom: 30px;
-    text-align: center;
-    border-bottom: 2px solid var(--cor-destaque);
-    padding-bottom: 10px;
-    font-size: 2em;
-    font-weight: 700;
-}
-
-/* Formulário Adicionar Produto e Gerenciamento de Sabores */
-.gerenciamento-form,
-#gerenciamento-sabores-container {
-    background-color: var(--cor-branco);
-    padding: 25px;
-    border-radius: 12px; 
-    box-shadow: var(--sombra-media); 
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 30px; 
-    border: 1px solid var(--cor-borda);
-}
-
-.gerenciamento-form h3,
-.gerenciamento-section .lista-titulo {
-    font-family: 'Poppins', sans-serif;
-    color: var(--cor-destaque);
-    margin-bottom: 20px; 
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--cor-fundo); 
-    font-size: 1.6em;
+    width: 20px;
     text-align: center;
     font-weight: 600;
 }
-.gerenciamento-form textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    font-size: 1em;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    resize: vertical; 
-    min-height: 80px;
+
+.adicionar-personalizado {
+    background-color: var(--cor-info) !important;
+    color: var(--cor-branco) !important;
+}
+.adicionar-personalizado:hover {
+     background-color: #0069d9 !important;
 }
 
-.gerenciamento-form textarea:focus {
-    border-color: var(--cor-destaque);
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
-    outline: none;
-}
+/* ------------------------------------------------------------------
+   ESTILOS DO CARRINHO FLUTUANTE
+   ------------------------------------------------------------------ */
 
-
-/* Estilos de input/select */
-.gerenciamento-form .form-group label {
-    font-weight: 600;
-    display: block;
-    margin-bottom: 8px;
-    color: var(--cor-texto);
-}
-
-.gerenciamento-form input[type="text"],
-.gerenciamento-form input[type="number"],
-.gerenciamento-form select,
-.sabor-form input[type="text"] { 
-    width: 100%;
-    padding: 12px 15px; 
-    border: 1px solid var(--cor-borda); 
-    border-radius: 8px; 
-    font-size: 1em;
-    transition: border-color 0.3s, box-shadow 0.2s;
-    background-color: var(--cor-branco);
-    appearance: none; 
-}
-
-.gerenciamento-form input:focus,
-.gerenciamento-form select:focus,
-.sabor-form input:focus {
-    border-color: var(--cor-destaque); 
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
-    outline: none;
-}
-
-/* Estilo para Checkbox Personalizável */
-.combo-check-group {
-    display: flex;
-    align-items: center;
-    background-color: #e6f0ff; 
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 1px solid var(--cor-info);
-    box-shadow: var(--sombra-leve);
-}
-
-.combo-check-group input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    margin-right: 12px;
-    cursor: pointer;
-    accent-color: var(--cor-info); 
-}
-
-.combo-check-group .checkbox-label {
-    margin: 0;
-    font-weight: 600;
-    color: var(--cor-info);
-    cursor: pointer;
-    font-size: 1.05em;
-}
-
-
-/* Seções de gerenciamento individuais */
-.gerenciamento-section {
-    background-color: var(--cor-branco);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: var(--sombra-media);
-    margin-bottom: 30px;
-    border: 1px solid var(--cor-borda);
-}
-
-#lista-produtos-gerenciar {
-    display: flex;
-    flex-direction: column;
-    gap: 15px; 
-}
-
-.item-gerenciar {
-    background-color: var(--cor-cinza-claro);
-    padding: 15px 20px; 
-    border-radius: 8px; 
-    box-shadow: var(--sombra-leve);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-left: 6px solid var(--cor-destaque); 
-    transition: background-color 0.2s;
-}
-.item-gerenciar:hover {
-    background-color: #e2e6ea;
-}
-
-
-.item-gerenciar span {
-    font-weight: 400; 
-    color: var(--cor-texto);
-    font-size: 1.05em; 
-    flex-grow: 1;
-    padding-right: 15px;
-    line-height: 1.4;
-}
-
-.item-gerenciar-remover-btn {
-    background-color: var(--cor-perigo); 
-    color: var(--cor-branco);
-    border: none;
-    padding: 10px 18px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.95em;
-    transition: background-color 0.2s, transform 0.1s;
-    font-weight: 600;
-    white-space: nowrap; 
-}
-
-.item-gerenciar-remover-btn:hover {
-    background-color: #c82333;
-    transform: translateY(-1px);
-}
-.item-gerenciar-remover-btn:active {
-    transform: translateY(0);
-}
-
-.aviso-gerenciamento {
-    text-align: center;
-    color: #999;
-    font-style: italic;
-    padding: 25px 15px;
-    background-color: var(--cor-cinza-claro);
-    border-radius: 8px;
-    border: 1px dashed var(--cor-borda);
-}
-
-
-/* ================================================= */
-/* ESTILOS PARA GERENCIAMENTO DE SABORES/COMPLEMENTOS */
-/* ================================================= */
-
-.sabor-form {
-    display: flex;
-    gap: 15px;
-    align-items: flex-end;
-    margin-bottom: 25px;
-    border-bottom: 1px dashed var(--cor-borda);
-    padding-bottom: 20px;
-}
-
-.sabor-form .form-group {
-    flex-grow: 1;
-    margin-bottom: 0;
-}
-
-.sabor-form .btn-primary {
-    margin-top: 0;
-    padding: 10px 18px;
-    background-color: var(--cor-info); 
-}
-
-.sabor-form .btn-primary:hover {
-    background-color: #0056b3;
-}
-
-.sabores-lista-titulo {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.4em;
-    color: var(--cor-principal);
-    margin-bottom: 15px;
-    font-weight: 600;
-    text-align: center;
-}
-
-/* Reutiliza o estilo do grid de sabores do modal */
-#lista-sabores-atuais, #lista-complementos-atuais {
-    border: 1px solid var(--cor-borda);
-    padding: 15px;
-    background-color: var(--cor-cinza-claro);
-    border-radius: 8px;
-}
-
-#lista-localidades-atuais {
-     display: flex;
-    flex-direction: column;
-    gap: 15px; 
-}
-
-.sabor-item {
-    background-color: var(--cor-branco);
-    border-color: var(--cor-info);
-    color: var(--cor-info);
-    padding: 10px 15px;
-    font-size: 0.9em;
-    position: relative;
-    padding-right: 40px;
-    border-radius: 25px; 
-    box-shadow: var(--sombra-leve);
-    font-weight: 500;
-    transition: all 0.2s;
-    cursor: default; 
-}
-
-.sabor-item .remover-sabor-btn,
-.sabor-item .remover-complemento-btn {
-    position: absolute;
-    top: 50%;
-    right: 5px;
-    transform: translateY(-50%);
-    width: 30px;
-    height: 30px;
-    background-color: var(--cor-perigo);
-    color: var(--cor-branco);
-    border: none;
-    border-radius: 50%;
-    font-size: 0.9em;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.2s;
-    box-shadow: var(--sombra-leve);
-}
-
-.sabor-item .remover-sabor-btn:hover,
-.sabor-item .remover-complemento-btn:hover {
-    background-color: #c82333;
-}
-
-/* --- NOVO MODAL: Seleção de Sabores/Complementos (Mantido) --- */
-.modal-info-text {
-    font-size: 1em;
-    color: var(--cor-principal);
-    margin-bottom: 20px;
-    font-weight: 600;
-    text-align: center;
-}
-
-.sabores-opcoes-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 20px;
-    max-height: 250px; 
-    overflow-y: auto; 
-    padding: 15px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    background-color: var(--cor-cinza-claro);
-}
-
-.sabor-item {
-    background-color: var(--cor-branco);
-    color: var(--cor-texto);
-    padding: 12px 18px;
-    border-radius: 25px; 
-    border: 1px solid #ccc;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    font-size: 0.95em;
-    text-align: center;
-    user-select: none; 
-    box-shadow: var(--sombra-leve);
-}
-
-.sabor-item:hover:not(.selected) {
-    border-color: var(--cor-destaque);
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
-}
-
-.sabor-item.selected {
-    background-color: var(--cor-info); 
-    color: var(--cor-branco);
-    border-color: var(--cor-info);
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-    transform: scale(1.05);
-}
-
-.contador-text {
-    text-align: center;
-    font-weight: 600;
-    color: var(--cor-texto);
-    margin-bottom: 20px;
-    font-size: 1.1em;
-}
-
-/* --- FIM NOVO MODAL --- */
-
-
-/* Carrinho Flutuante (Bottom Bar) */
 #carrinho-flutuante {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: var(--cor-principal);
-    padding: 12px 15px;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-    z-index: 1000;
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
+    z-index: 100;
+    padding: 10px;
+    background-color: var(--cor-fundo);
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+    text-align: center;
 }
 
 #ver-carrinho-btn {
-    width: 100%;
-    padding: 16px 20px;
     background-color: var(--cor-secundaria);
     color: var(--cor-principal);
     border: none;
-    border-radius: 8px;
-    font-size: 1.15em;
-    font-family: 'Poppins', sans-serif;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1.1em;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: var(--sombra-leve);
+    transition: background-color 0.3s;
+    box-shadow: var(--sombra-media);
+    width: 100%;
+    max-width: 400px;
 }
 
 #ver-carrinho-btn:hover {
-    background-color: #e3b000;
-    transform: translateY(-2px);
-}
-#ver-carrinho-btn.has-items {
-    background-color: var(--cor-sucesso);
-    color: var(--cor-branco);
-}
-#ver-carrinho-btn.has-items:hover {
-    background-color: #218838;
+    background-color: #ffc400;
 }
 
-/* Modal do Carrinho (Padrão) */
+#ver-carrinho-btn.has-items {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}
+
+/* ------------------------------------------------------------------
+   MODAL DO CARRINHO
+   ------------------------------------------------------------------ */
+
 .modal {
-    display: none; 
+    display: none;
     position: fixed;
-    z-index: 1001;
+    z-index: 1001; 
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.6);
-    animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    background-color: rgba(0,0,0,0.5); 
 }
 
 .modal-conteudo {
     background-color: var(--cor-branco);
-    margin: 10% auto;
-    padding: 30px;
-    border: 1px solid var(--cor-borda);
+    margin: 5% auto; 
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: var(--sombra-pesada);
     width: 90%;
     max-width: 500px;
-    border-radius: 12px;
-    animation: slideUp 0.3s ease-out;
-    box-shadow: var(--sombra-pesada);
+    position: relative;
+    animation: fadeIn 0.3s;
 }
 
-@keyframes slideUp {
-    from { transform: translateY(50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-conteudo h3 {
+    color: var(--cor-principal);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--cor-cinza-claro);
+    padding-bottom: 5px;
 }
 
 .fechar-modal {
     color: #aaa;
     float: right;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 15px;
     line-height: 1;
-    transition: color 0.2s;
 }
 
 .fechar-modal:hover,
@@ -876,99 +453,78 @@ header p {
     text-decoration: none;
 }
 
-.modal-conteudo h3 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--cor-principal);
-    margin-bottom: 20px;
-    border-bottom: 2px solid var(--cor-borda);
-    padding-bottom: 10px;
-    font-size: 1.8em;
-    font-weight: 700;
-}
-
 #lista-carrinho {
     list-style: none;
-    margin-bottom: 20px;
-    max-height: 300px;
+    padding: 0;
+    margin-bottom: 15px;
+    max-height: 250px;
     overflow-y: auto;
-    padding-right: 5px; 
+    padding-right: 10px;
 }
 
 #lista-carrinho li {
-    padding: 12px 0;
-    border-bottom: 1px dotted var(--cor-borda);
     display: flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.05em;
-}
-#lista-carrinho li:last-child {
-    border-bottom: none;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--cor-cinza-claro);
+    font-size: 1em;
 }
 
 #lista-carrinho li span:first-child {
-    flex-basis: 65%; 
-}
-#lista-carrinho li span:last-child {
-    flex-basis: 30%; 
-    text-align: right;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+    font-weight: 600;
 }
 
+#lista-carrinho li span:last-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
 
 .item-remover {
     background-color: var(--cor-perigo);
-    border: none;
     color: var(--cor-branco);
-    padding: 6px 10px;
+    border: none;
+    padding: 3px 8px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 0.85em;
-    transition: background-color 0.2s;
+    font-size: 0.8em;
     font-weight: 600;
+    transition: background-color 0.2s;
 }
 
 .item-remover:hover {
     background-color: #c82333;
 }
 
-.carrinho-vazio {
-    text-align: center;
-    color: #999;
-    font-style: italic;
-    padding: 30px 0 !important;
-    border-bottom: none !important;
+.sabores-detalhe {
+    flex-basis: 100%;
+    font-size: 0.85em;
+    color: var(--cor-info);
+    margin-top: 5px;
+    padding-left: 10px;
+    white-space: pre-wrap;
+    line-height: 1.3;
 }
 
 .total {
-    font-size: 1.5em;
-    font-weight: 700;
     text-align: right;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 2px dashed var(--cor-secundaria);
+    font-size: 1.2em;
+    font-weight: 700;
     color: var(--cor-principal);
-}
-
-/* NOVO: Estilos para o formulário de finalização */
-#form-finalizar-pedido {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--cor-borda);
+    padding-top: 10px;
+    border-top: 2px solid var(--cor-secundaria);
+    margin-bottom: 15px;
 }
 
 #form-finalizar-pedido h4 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.2em;
     color: var(--cor-principal);
-    margin-top: 15px;
+    margin-top: 20px;
     margin-bottom: 10px;
-    border-bottom: 1px dashed var(--cor-cinza-claro);
-    padding-bottom: 5px;
+    font-size: 1.1em;
 }
 
 .form-group-inline {
@@ -980,83 +536,270 @@ header p {
     flex: 1;
 }
 
-/* Estilos para input/select dentro do modal */
-#form-finalizar-pedido input[type="text"],
-#form-finalizar-pedido input[type="number"],
-#form-finalizar-pedido select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 6px;
-    font-size: 1em;
-}
-
-#form-finalizar-pedido input:focus,
-#form-finalizar-pedido select:focus {
-    border-color: var(--cor-destaque);
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
-    outline: none;
-}
-
-/* Estilo para o aviso de troco */
 .aviso-troco {
-    font-size: 0.9em;
-    color: var(--cor-info);
+    font-size: 0.85em;
     margin-top: 5px;
-    font-weight: 600;
 }
 
 .aviso-whatsapp-rodape {
-    text-align: center;
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: #6c757d;
+    text-align: center;
     margin-top: 15px;
 }
 
-#finalizar-pedido-btn-form {
-    margin-top: 20px;
-}
+/* ------------------------------------------------------------------
+   MODAIS DE SABORES E COMPLEMENTOS
+   ------------------------------------------------------------------ */
 
-
-/* Rodapé */
-footer {
-    background-color: var(--cor-principal);
-    color: #e9ecef;
+.modal-info-text {
     text-align: center;
-    padding: 15px;
-    font-size: 0.85em;
-    position: relative;
-    bottom: 0;
-    width: 100%;
+    color: #6c757d;
+    margin-bottom: 15px;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .form-group-inline {
-        flex-direction: column;
-        gap: 0;
-    }
-    .form-group-inline .form-group {
-        flex: none;
-    }
-    header h1 {
-        font-size: 1.8em;
-    }
-    header p {
-        font-size: 0.8em;
-    }
-    .header-logo {
-        width: 50px;
-        height: 50px;
-    }
-    .categoria-titulo {
-        font-size: 1.6em;
-    }
-    .item-card h3 {
-        font-size: 1.2em;
-    }
-    .quantidade-controle button,
-    .quantidade-controle .adicionar-personalizado {
+.contador-text {
+    text-align: center;
+    font-weight: 600;
+    color: var(--cor-info);
+    margin: 15px 0;
+    padding: 8px;
+    border: 1px solid var(--cor-cinza-claro);
+    border-radius: 8px;
+}
+
+.sabores-opcoes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+}
+
+.sabor-item {
+    background-color: var(--cor-cinza-claro);
+    color: var(--cor-texto);
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    user-select: none;
+    flex-grow: 1;
+    text-align: center;
+    min-width: 120px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sabor-item:hover {
+    background-color: #e0e0e0;
+}
+
+.sabor-item.selected {
+    background-color: var(--cor-info);
+    color: var(--cor-branco);
+    box-shadow: var(--sombra-media);
+}
+
+.sabor-item.selected:hover {
+    background-color: #0069d9;
+}
+
+.complemento-item {
+    background-color: var(--cor-cinza-claro);
+}
+
+.complemento-item.selected {
+     background-color: var(--cor-destaque);
+     color: var(--cor-branco);
+}
+.complemento-item.selected .preco-extra {
+     color: var(--cor-branco);
+}
+
+
+.preco-extra {
+    font-size: 0.9em;
+    font-weight: 400;
+    color: #555;
+    margin-left: 5px;
+}
+
+/* ------------------------------------------------------------------
+   ÁREA DE GERENCIAMENTO
+   ------------------------------------------------------------------ */
+
+.gerenciamento-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px 10px;
+}
+
+.gerenciamento-container h2 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--cor-principal);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.gerenciamento-form, .gerenciamento-section {
+    background-color: var(--cor-branco);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--sombra-leve);
+    margin-bottom: 20px;
+}
+
+.gerenciamento-form h3, .gerenciamento-section h3 {
+    color: var(--cor-destaque);
+    border-bottom: 1px solid var(--cor-cinza-claro);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.combo-check-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.combo-check-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+.combo-check-group .checkbox-label {
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+/* Lista de Produtos para Gerenciar */
+.lista-titulo {
+    font-size: 1.1em;
+    color: var(--cor-principal);
+    margin-bottom: 10px;
+}
+
+#lista-produtos-gerenciar, #lista-sabores-atuais {
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.item-gerenciar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--cor-cinza-claro);
+}
+
+.item-gerenciar:last-child {
+    border-bottom: none;
+}
+
+.item-gerenciar span {
+    flex-grow: 1;
+    font-size: 0.95em;
+    color: var(--cor-texto);
+}
+
+.item-gerenciar-remover-btn {
+    background-color: var(--cor-perigo);
+    color: var(--cor-branco);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s;
+}
+
+.item-gerenciar-remover-btn:hover {
+    background-color: #c82333;
+}
+
+.aviso-gerenciamento {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+}
+
+/* Gerenciamento de Sabores */
+.sabor-form {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--cor-cinza-claro);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.sabor-form .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.sabor-form .btn-primary {
+    flex-basis: 150px;
+    margin-top: 0;
+}
+
+.sabores-lista-titulo {
+    color: var(--cor-principal);
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+#lista-sabores-atuais {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+}
+
+#lista-sabores-atuais .sabor-item {
+    padding: 5px 10px;
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto);
+    min-width: 100px;
+}
+
+.remover-sabor-btn {
+    background: none;
+    border: none;
+    color: var(--cor-perigo);
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 0.9em;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.remover-sabor-btn:hover {
+    color: #c82333;
+}
+
+
+/* ------------------------------------------------------------------
+   MEDIA QUERIES (Responsividade)
+   ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+    .quantidade-controle button, .quantidade-controle .adicionar-personalizado {
         width: 35px;
         height: 35px;
         font-size: 1.3em;
@@ -1080,6 +823,17 @@ footer {
     .sabores-opcoes-grid {
         max-height: 200px;
     }
+    .sabor-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .sabor-form .btn-primary {
+        flex-basis: auto;
+    }
+    .form-group-inline {
+        flex-direction: column;
+        gap: 0;
+    }
 }
 @media (max-width: 480px) {
     header h1 {
@@ -1098,29 +852,13 @@ footer {
     .item-card h3 {
         font-size: 1.1em;
     }
-    .item-card .descricao {
-        font-size: 0.85em;
-    }
     .item-card .preco {
         font-size: 1em;
     }
-    .quantidade-controle {
-        gap: 8px;
+    .item-card .descricao {
+        font-size: 0.85em;
     }
-    .quantidade-controle button,
-    .quantidade-controle .adicionar-personalizado {
-        width: 32px;
-        height: 32px;
-        font-size: 1.2em;
-    }
-    .quantidade {
-        font-size: 1em;
-    }
-    .btn-primary, .tab-buttons button, #ver-carrinho-btn {
-        font-size: 1em;
-        padding: 12px 15px;
-    }
-    .modal-entrada-conteudo, .modal-conteudo {
-        margin: 5% auto;
+    .modal-conteudo {
+         margin: 5% auto 60px auto; 
     }
 }
